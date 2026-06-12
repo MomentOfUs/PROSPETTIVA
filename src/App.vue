@@ -140,7 +140,7 @@ function getFaviconUrl(urlStr: string): string {
 const activeGroupId = ref<string>('')
 const showCategorySidebar = ref(false)
 const currentPage = ref(0)
-const pageSize = ref(15) // 15 items per page (e.g. 5 columns x 3 rows)
+const pageSize = computed(() => (config.value.gridRows ?? 3) * (config.value.gridCols ?? 5))
 
 const filteredItems = computed(() => {
   if (!activeGroupId.value) return items.value
@@ -158,6 +158,11 @@ const paginatedItems = computed(() => {
 })
 
 watch(activeGroupId, () => {
+  currentPage.value = 0
+})
+
+// 行/列数变化时重置到第0页，防止越界
+watch(pageSize, () => {
   currentPage.value = 0
 })
 
@@ -751,7 +756,10 @@ onUnmounted(() => {
           <!-- Icon Grid (Mobile App Launcher Style) -->
           <div v-else class="flex flex-col gap-4 bg-bg-base/20 border border-[#d4af37]/10 p-5 rounded-xl min-h-[220px]">
             <!-- Grid Cards -->
-            <div class="flex flex-wrap justify-start gap-6 md:gap-7">
+            <div
+              class="grid gap-6 md:gap-7"
+              :style="{ gridTemplateColumns: `repeat(${config.gridCols ?? 5}, minmax(0, max-content))` }"
+            >
                 <a v-for="item in paginatedItems" :key="item.id" :href="isWidgetItem(item) ? 'javascript:void(0)' : item.url" :target="isWidgetItem(item) ? '_self' : '_blank'" @click="handleItemClick(item, $event)" :draggable="true" @dragstart="handleItemDragStart(item.id, $event)" @dragover="handleItemDragOver(item.id, $event)" @drop="handleItemDrop(item.id, $event)" @dragend="handleDragEnd" class="flex flex-col items-center gap-1.5 group/card relative select-none w-16 sm:w-20 shrink-0" :class="[dragOverItemId === item.id ? 'opacity-60 scale-95' : '']" :title="item.description || item.title">
               
                 <!-- Edit/Delete hover buttons -->
@@ -985,7 +993,56 @@ onUnmounted(() => {
           </button>
         </div>
 
+        <!-- Grid Layout Config -->
+        <div class="flex flex-col gap-3 border-b border-[#d4af37]/20 pb-4">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">图标网格布局</span>
+            <span class="text-[10px] text-gold/60 font-serif font-normal">每页 {{ config.gridRows * config.gridCols }} 个图标</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <!-- 行数 -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs text-[#ebdcb9]/70 font-serif font-normal">行数（{{ config.gridRows }} 行）</label>
+              <div class="flex items-center gap-2">
+                <button
+                  @click="config.gridRows = Math.max(1, config.gridRows - 1)"
+                  class="w-7 h-7 rounded border border-[#d4af37]/40 text-gold hover:bg-[#6e5020]/40 bg-transparent cursor-pointer transition-all flex items-center justify-center font-bold text-sm"
+                >−</button>
+                <div class="flex-1 text-center text-sm font-serif border border-[#d4af37]/20 rounded py-1 bg-[#120e0c] text-[#f5f2eb]">
+                  {{ config.gridRows }}
+                </div>
+                <button
+                  @click="config.gridRows = Math.min(6, config.gridRows + 1)"
+                  class="w-7 h-7 rounded border border-[#d4af37]/40 text-gold hover:bg-[#6e5020]/40 bg-transparent cursor-pointer transition-all flex items-center justify-center font-bold text-sm"
+                >＋</button>
+              </div>
+              <input type="range" min="1" max="6" v-model.number="config.gridRows"
+                class="w-full accent-[#d4af37] cursor-pointer" />
+            </div>
+            <!-- 列数 -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs text-[#ebdcb9]/70 font-serif font-normal">列数（{{ config.gridCols }} 列）</label>
+              <div class="flex items-center gap-2">
+                <button
+                  @click="config.gridCols = Math.max(2, config.gridCols - 1)"
+                  class="w-7 h-7 rounded border border-[#d4af37]/40 text-gold hover:bg-[#6e5020]/40 bg-transparent cursor-pointer transition-all flex items-center justify-center font-bold text-sm"
+                >−</button>
+                <div class="flex-1 text-center text-sm font-serif border border-[#d4af37]/20 rounded py-1 bg-[#120e0c] text-[#f5f2eb]">
+                  {{ config.gridCols }}
+                </div>
+                <button
+                  @click="config.gridCols = Math.min(10, config.gridCols + 1)"
+                  class="w-7 h-7 rounded border border-[#d4af37]/40 text-gold hover:bg-[#6e5020]/40 bg-transparent cursor-pointer transition-all flex items-center justify-center font-bold text-sm"
+                >＋</button>
+              </div>
+              <input type="range" min="2" max="10" v-model.number="config.gridCols"
+                class="w-full accent-[#d4af37] cursor-pointer" />
+            </div>
+          </div>
+        </div>
+
         <!-- Widget controls -->
+
         <div class="flex flex-col gap-3">
           <span class="text-sm">启用小工具 (Widgets)</span>
           <div class="grid grid-cols-2 gap-3">

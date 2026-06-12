@@ -30,6 +30,8 @@ export interface Config {
   openaiKey?: string
   openaiBase?: string
   openaiModel?: string
+  gridRows: number
+  gridCols: number
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -53,7 +55,9 @@ const DEFAULT_CONFIG: Config = {
   },
   openaiKey: '',
   openaiBase: 'https://api.deepseek.com',
-  openaiModel: 'deepseek-chat'
+  openaiModel: 'deepseek-chat',
+  gridRows: 3,
+  gridCols: 5
 }
 
 // 旧版颜色兼容映射（pastel → 高对比油画色调）
@@ -120,6 +124,10 @@ export function useNavData() {
           }
         }
         config.value = parsedConfig
+
+        // 兼容旧版：补齐 gridRows/gridCols 默认值
+        if (!config.value.gridRows) config.value.gridRows = DEFAULT_CONFIG.gridRows
+        if (!config.value.gridCols) config.value.gridCols = DEFAULT_CONFIG.gridCols
 
         // 修正旧版 logoText
         if (['MANGA NAV', 'MANGA DASH', 'ARTISAN NAV'].includes(config.value.logoText)) {
