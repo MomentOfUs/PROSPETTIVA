@@ -1,6 +1,6 @@
 // 前端云同步原生 fetch API 接口封装
 
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = ''
 
 // ==================== 完整类型定义 ====================
 

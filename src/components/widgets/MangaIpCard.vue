@@ -53,17 +53,17 @@ function updateOnlineStatus() {
 async function fetchNetworkInfo() {
   loading.value = true
   try {
-    const res = await fetch('https://ipapi.co/json/')
+    const res = await fetch('https://ip-api.com/json/?fields=status,message,query,country,regionName,city,isp,lat,lon')
     const data = await res.json()
     if (data) {
-      ip.value = data.ip || '未知IP'
-      country.value = data.country_name || ''
-      region.value = data.region || ''
+      ip.value = data.query || '未知IP'
+      country.value = data.country || ''
+      region.value = data.regionName || ''
       const city = data.city || ''
       location.value = `${country.value} · ${region.value} · ${city}`.replace(/^[ ·]+|[ ·]+$/g, '') || '未知位置'
-      org.value = data.org || '未知运营商'
-      if (data.latitude && data.longitude) {
-        latLng.value = `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`
+      org.value = data.isp || '未知运营商'
+      if (data.lat && data.lon) {
+        latLng.value = `${data.lat.toFixed(4)}, ${data.lon.toFixed(4)}`
       } else {
         latLng.value = '未知经纬度'
       }

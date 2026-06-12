@@ -66,11 +66,11 @@ async function fetchWeather() {
     } catch {}
   }
   try {
-    const ipRes = await fetch('https://ipapi.co/json/')
+    const ipRes = await fetch('https://ip-api.com/json/?fields=status,message,city,lat,lon')
     const ipData = await ipRes.json()
-    if (ipData && ipData.latitude && ipData.longitude) {
+    if (ipData && ipData.lat && ipData.lon) {
       city.value = ipData.city || 'BEIJING'
-      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipData.latitude}&longitude=${ipData.longitude}&current_weather=true`)
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipData.lat}&longitude=${ipData.lon}&current_weather=true`)
       const weatherData = await weatherRes.json()
       if (weatherData && weatherData.current_weather) {
         temp.value = String(Math.round(weatherData.current_weather.temperature))
