@@ -41,6 +41,23 @@ export interface WeightRecord {
   note?: string | null
 }
 
+export interface SnippetItem {
+  id: string
+  user_id?: number
+  title: string
+  content: string
+  category: string
+  color: string
+}
+
+export interface CountdownItem {
+  id: string
+  user_id?: number
+  title: string
+  target_date: string
+  category: string
+}
+
 export interface SyncPayload {
   logo_text: string
   background_pattern: string
@@ -55,6 +72,8 @@ export interface SyncPayload {
   note_content: string
   note_password_hash: string
   weights: WeightRecord[]
+  snippets: SnippetItem[]
+  countdowns: CountdownItem[]
 }
 
 // ==================== Token 管理 ====================

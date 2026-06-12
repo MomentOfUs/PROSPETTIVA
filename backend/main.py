@@ -9,7 +9,7 @@ from sqlmodel import SQLModel, Session, select
 from sqlalchemy import create_engine, delete
 from typing import List
 
-from models import User, UserConfig, NavGroup, NavItem, TodoItem, Note, WeightRecord, UserCreate, Token, UserOut, SyncPayload
+from models import User, UserConfig, NavGroup, NavItem, TodoItem, Note, WeightRecord, SnippetItem, CountdownItem, UserCreate, Token, UserOut, SyncPayload
 from auth import verify_password, get_password_hash, create_access_token, get_current_user_id
 
 logging.basicConfig(level=logging.INFO)
@@ -134,6 +134,8 @@ def pull_sync(user_id: int = Depends(get_current_user_id), session: Session = De
     todos = session.exec(select(TodoItem).where(TodoItem.user_id == user_id)).all()
     note = session.exec(select(Note).where(Note.user_id == user_id)).first()
     weights = session.exec(select(WeightRecord).where(WeightRecord.user_id == user_id)).all()
+    snippets = session.exec(select(SnippetItem).where(SnippetItem.user_id == user_id)).all()
+    countdowns = session.exec(select(CountdownItem).where(CountdownItem.user_id == user_id)).all()
 
     return SyncPayload(
         logo_text=config.logo_text if config else "ARTISAN NAV",
@@ -142,13 +144,15 @@ def pull_sync(user_id: int = Depends(get_current_user_id), session: Session = De
         openai_key=config.openai_key if config else "",
         openai_base=config.openai_base if config else "https://api.deepseek.com",
         openai_model=config.openai_model if config else "deepseek-chat",
-        widgets_json=config.widgets_json if config else '{"clock":true,"search":true,"sysinfo":true,"weather":true,"hitokoto":true,"ipcard":true,"aichat":true,"todo":true,"notes":true,"weight":true}',
+        widgets_json=config.widgets_json if config else '{"clock":true,"search":true,"sysinfo":true,"weather":true,"hitokoto":true,"ipcard":true,"aichat":true,"todo":true,"notes":true,"weight":true,"snippet":true,"devtools":true,"countdown":true}',
         groups=groups,
         items=items,
         todos=todos,
         note_content=note.content if note else "",
         note_password_hash=note.password_hash if note else "",
-        weights=weights
+        weights=weights,
+        snippets=snippets,
+        countdowns=countdowns
     )
 
 @app.post("/api/sync/push")
@@ -178,11 +182,13 @@ def push_sync(payload: SyncPayload, user_id: int = Depends(get_current_user_id),
     note.password_hash = payload.note_password_hash if payload.note_password_hash is not None else note.password_hash
     session.add(note)
 
-    # 3. 清理该用户所有的旧分组、导航项、待办与体重记录
+    # 3. 清理该用户所有的旧数据
     session.exec(delete(NavItem).where(NavItem.user_id == user_id))
     session.exec(delete(NavGroup).where(NavGroup.user_id == user_id))
     session.exec(delete(TodoItem).where(TodoItem.user_id == user_id))
     session.exec(delete(WeightRecord).where(WeightRecord.user_id == user_id))
+    session.exec(delete(SnippetItem).where(SnippetItem.user_id == user_id))
+    session.exec(delete(CountdownItem).where(CountdownItem.user_id == user_id))
     session.commit()
 
     # 4. 插入全新打包上传的数据集
@@ -204,6 +210,14 @@ def push_sync(payload: SyncPayload, user_id: int = Depends(get_current_user_id),
     for w in payload.weights:
         w.user_id = user_id
         session.add(w)
+
+    for snip in payload.snippets:
+        snip.user_id = user_id
+        session.add(snip)
+
+    for cd in payload.countdowns:
+        cd.user_id = user_id
+        session.add(cd)
 
     session.commit()
     return {"status": "success", "message": "星谱数据云端覆盖同步成功！"}

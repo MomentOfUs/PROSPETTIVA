@@ -1,12 +1,39 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import MangaCard from '../MangaCard.vue'
 import { triggerCloudPush } from '../../utils/api'
-import { useCollapsible } from '../../composables/useCollapsible'
 
-const { collapsed, toggle } = useCollapsible('notes')
+const props = withDefaults(defineProps<{
+  preview?: boolean
+}>(), {
+  preview: false
+})
 
-const notesText = ref('')
+interface NoteItem {
+  id: string
+  title: string
+  content: string
+  updatedAt: string
+}
+
+const notes = ref<NoteItem[]>([
+  {
+    id: 'n1',
+    title: '文艺复兴时空法度',
+    content: '在此记录您的灵感与构想...\n1. 探索透视几何的美妙。\n2. 人文精神与理性的交织。',
+    updatedAt: new Date().toISOString()
+  }
+])
+const activeNoteId = ref<string>('n1')
+
+const activeNote = computed(() => {
+  return notes.value.find(n => n.id === activeNoteId.value) || notes.value[0] || {
+    id: '',
+    title: '',
+    content: '',
+    updatedAt: new Date().toISOString()
+  }
+})
+
 const isLocked = ref(false)
 const pwdInput = ref('')
 const setupPwdInput = ref('')
@@ -50,11 +77,29 @@ function loadNotes() {
     isLocked.value = false
   }
 
-  const storedText = localStorage.getItem('manga_widget_notes')
-  if (storedText) {
-    notesText.value = storedText
-  } else {
-    notesText.value = '在此记录您的灵感与构想...\n1. 探索透视几何的美妙。\n2. 人文精神与理性的交织。'
+  // Load notes list
+  const storedList = localStorage.getItem('manga_widget_notes_list')
+  if (storedList) {
+    try {
+      notes.value = JSON.parse(storedList)
+    } catch {
+      notes.value = []
+    }
+  }
+  
+  if (notes.value.length === 0) {
+    notes.value = [
+      {
+        id: 'n1',
+        title: '文艺复兴时空法度',
+        content: '在此记录您的灵感与构想...\n1. 探索透视几何的美妙。\n2. 人文精神与理性的交织。',
+        updatedAt: new Date().toISOString()
+      }
+    ]
+  }
+
+  if (!activeNoteId.value || !notes.value.find(n => n.id === activeNoteId.value)) {
+    activeNoteId.value = notes.value[0].id
   }
 }
 
@@ -67,10 +112,10 @@ onUnmounted(() => {
   window.removeEventListener('artisan-cloud-data-pulled', loadNotes)
 })
 
-watch(notesText, (newVal) => {
-  localStorage.setItem('manga_widget_notes', newVal)
+watch(notes, (newVal) => {
+  localStorage.setItem('manga_widget_notes_list', JSON.stringify(newVal))
   triggerCloudPush()
-})
+}, { deep: true })
 
 // Unlock notes
 function handleUnlock() {
@@ -137,28 +182,80 @@ function lockImmediately() {
     isLocked.value = true
   }
 }
+
+function createNewNote() {
+  const newId = Date.now().toString()
+  notes.value.push({
+    id: newId,
+    title: '未命名灵感手稿',
+    content: '新笔录手札。',
+    updatedAt: new Date().toISOString()
+  })
+  activeNoteId.value = newId
+}
+
+function deleteNote(id: string) {
+  if (notes.value.length <= 1) {
+    alert('必须保留至少一份手稿便签。')
+    return
+  }
+  if (confirm('确认要抹去这篇手札便签吗？此操作无法撤销。')) {
+    notes.value = notes.value.filter(n => n.id !== id)
+    if (activeNoteId.value === id) {
+      activeNoteId.value = notes.value[0].id
+    }
+  }
+}
+
+function handleContentInput() {
+  if (activeNote.value) {
+    activeNote.value.updatedAt = new Date().toISOString()
+    const lines = activeNote.value.content.split('\n')
+    const firstLine = lines[0].trim()
+    if (firstLine) {
+      activeNote.value.title = firstLine.length > 15 ? firstLine.substring(0, 15) + '...' : firstLine
+    } else {
+      activeNote.value.title = '无标题便签'
+    }
+  }
+}
 </script>
 
 <template>
-  <MangaCard class="w-full max-w-[280px] flex flex-col gap-2 font-bold select-none overflow-hidden font-serif" :hover-shift="true">
-    <!-- Header -->
-    <div class="text-sm border-b border-[#d4af37]/20 pb-1.5 uppercase tracking-widest flex justify-between items-center font-serif text-[#ebdcb9]">
-      <span>✏️ 秘语记事本</span>
+  <!-- Preview Mode -->
+  <div v-if="preview" class="text-left font-serif text-[10px] max-h-[120px] overflow-y-auto w-full break-all whitespace-pre-wrap leading-relaxed select-text p-1">
+    <div v-if="isLocked" class="text-center text-gold/60 py-4 italic">
+      🔒 秘语手札已加锁<br>
+      <span class="text-[8px] opacity-70">点击卡片输入密码以解锁</span>
+    </div>
+    <div v-else-if="!activeNote || !activeNote.content.trim()" class="text-center text-gold/40 py-4 italic">
+      手札空无一物，点击以记录。
+    </div>
+    <div v-else class="text-parchment/90 bg-[#120e0c]/40 border border-[#d4af37]/10 p-2 rounded">
+      {{ activeNote.content }}
+    </div>
+  </div>
+
+  <!-- Full Mode -->
+  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-serif text-cream">
+    <!-- Action Bar -->
+    <div class="flex items-center justify-between border-b border-[#d4af37]/20 pb-2.5">
+      <span class="text-xs uppercase tracking-widest text-[#ebdcb9]">✏️ 秘语记事本工坊</span>
       <div class="flex items-center gap-1.5">
         <!-- Not set password yet -->
         <button 
           v-if="!isPasswordSet && !showSetupPanel"
           @click="showSetupPanel = true"
-          class="text-[9px] bg-btn-base border border-[#d4af37]/45 text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+          class="text-[10px] bg-btn-base border border-[#d4af37]/45 text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] px-2 py-0.5 rounded cursor-pointer transition-colors"
           title="加密备忘录"
         >
-          🔒 封存
+          🔒 封存密语
         </button>
         <!-- Locked status (already set password) -->
         <button 
           v-if="isPasswordSet && !isLocked && !showResetPanel"
           @click="lockImmediately"
-          class="text-[9px] bg-reset border border-gold/45 text-cream hover:bg-reset-hover px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+          class="text-[10px] bg-reset border border-gold/45 text-cream hover:bg-reset-hover px-2 py-0.5 rounded cursor-pointer transition-colors"
           title="立刻锁定"
         >
           🔒 锁上
@@ -167,133 +264,168 @@ function lockImmediately() {
         <button 
           v-if="isPasswordSet && !isLocked && !showResetPanel"
           @click="showResetPanel = true"
-          class="text-[9px] bg-btn-base border border-[#d4af37]/45 text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+          class="text-[10px] bg-btn-base border border-[#d4af37]/45 text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] px-2 py-0.5 rounded cursor-pointer transition-colors"
           title="解除加密"
         >
-          🔓 启封
-        </button>
-        <button @click="toggle" class="text-gold/40 hover:text-gold transition-all cursor-pointer p-0.5" :title="collapsed ? '展开' : '收起'">
-          <span class="text-[10px] transition-transform duration-300 inline-block" :class="collapsed ? 'rotate-180' : ''">▼</span>
+          🔓 启封密语
         </button>
       </div>
     </div>
 
-    <Transition name="collapse">
-    <div v-show="!collapsed">
+    <!-- Main Workspace: Sidebar & Editor Area -->
+    <div class="flex flex-col lg:flex-row gap-5 min-h-[420px]">
+      <!-- 1. Left list (Sidebar) - always accessible if not locked -->
+      <div 
+        v-if="!isLocked || showSetupPanel || showResetPanel"
+        class="w-full lg:w-[200px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-[#d4af37]/20 pb-3 lg:pb-0 lg:pr-3.5 gap-2"
+      >
+        <button 
+          @click="createNewNote"
+          class="w-full text-center border border-[#d4af37]/45 text-[#d4af37] hover:bg-[#d4af37]/10 py-1.5 rounded text-xs cursor-pointer font-bold transition-all"
+        >
+          ➕ 撰写新笔记
+        </button>
 
-    <!-- 1. LOCKED VIEW -->
-    <div v-if="isLocked && !showResetPanel" class="flex flex-col items-center justify-center py-4 gap-3">
-      <!-- Animated Hardboiled Lock SVG -->
-      <div :class="{ 'animate-shake': shakeLock }">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-[#d4af37] mx-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="#120e0c" stroke="currentColor" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          <circle cx="12" cy="16" r="1.5" fill="currentColor" />
-          <path d="M12 17.5v2" />
-        </svg>
-      </div>
-      <span class="text-[9px] font-serif tracking-widest text-[#d4af37]/70">【手稿密存 · 密语解禁】</span>
-      
-      <!-- Password unlock input -->
-      <div class="w-full flex flex-col gap-2">
-        <div class="flex border border-[#d4af37]/40 rounded overflow-hidden bg-[#120e0c]">
-          <input 
-            v-model="pwdInput"
-            type="password"
-            @keydown.enter="handleUnlock"
-            placeholder="输入启封密语..."
-            class="w-full px-2 py-1 text-xs outline-none bg-transparent text-[#f5f2eb] placeholder-placeholder font-mono"
-          />
-          <button 
-            @click="handleUnlock"
-            class="bg-btn-base hover:bg-btn-hover hover:text-[#d4af37] border-l border-[#d4af37]/40 px-3.5 text-xs font-bold cursor-pointer text-[#ebdcb9] transition-colors"
+        <div class="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible max-h-[120px] lg:max-h-[380px] pr-0.5 mt-1">
+          <div 
+            v-for="noteItem in notes"
+            :key="noteItem.id"
+            @click="activeNoteId = noteItem.id"
+            class="flex items-center justify-between w-[130px] lg:w-full px-2.5 py-2 rounded border text-[11px] cursor-pointer transition-all shrink-0"
+            :class="[activeNoteId === noteItem.id ? 'bg-[#6e5020]/45 border-[#d4af37] text-gold' : 'border-[#d4af37]/15 text-[#ebdcb9]/50 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
           >
-            启封
-          </button>
+            <span class="truncate select-none max-w-[95px] lg:max-w-[130px] font-bold">{{ noteItem.title }}</span>
+            <button 
+              @click.stop="deleteNote(noteItem.id)"
+              class="text-[#ebdcb9]/40 hover:text-status-bad text-[9px] cursor-pointer pl-1"
+              title="销毁便签"
+            >
+              ×
+            </button>
+          </div>
         </div>
-        <p v-if="showError" class="text-[9px] text-status-bad text-center tracking-wider font-serif">
-          ※ 密语不匹配，手稿未能启封！
-        </p>
       </div>
-    </div>
 
-    <!-- 2. SETUP PASSWORD PANEL -->
-    <div v-else-if="showSetupPanel" class="flex flex-col gap-2 py-1 text-xs">
-      <span class="text-[10px] font-serif text-[#ebdcb9]/70">创设启封密语</span>
-      <input 
-        v-model="setupPwdInput"
-        type="password"
-        placeholder="设定密语..."
-        class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-xs text-[#f5f2eb] placeholder-placeholder outline-none font-mono focus:border-[#d4af37]"
-      />
-      <input 
-        v-model="setupPwdConfirmInput"
-        type="password"
-        placeholder="再次确认密语..."
-        class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-xs text-[#f5f2eb] placeholder-placeholder outline-none font-mono focus:border-[#d4af37]"
-      />
-      
-      <div class="flex gap-2 justify-end mt-1">
-        <button 
-          @click="showSetupPanel = false; showSetupError = false"
-          class="border border-[#d4af37]/35 px-2.5 py-1 rounded text-[10px] bg-[#120e0c] text-[#ebdcb9] hover:bg-[#1a1512] cursor-pointer"
-        >
-          取消
-        </button>
-        <button 
-          @click="handleSetPassword"
-          class="border border-[#d4af37]/40 px-2.5 py-1 rounded text-[10px] bg-btn-base text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] transition-all cursor-pointer font-bold"
-        >
-          保存密记
-        </button>
-      </div>
-      <p v-if="showSetupError" class="text-[9px] text-status-bad text-center font-serif">
-        ※ 密语为空或两次输入不一致！
-      </p>
-    </div>
+      <!-- 2. Right Workspace (Editor) -->
+      <div class="flex-grow flex flex-col justify-stretch">
+        <!-- 1. LOCKED VIEW -->
+        <div v-if="isLocked && !showResetPanel" class="flex flex-col items-center justify-center py-12 gap-3 flex-grow">
+          <!-- Animated Hardboiled Lock SVG -->
+          <div :class="{ 'animate-shake': shakeLock }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-[#d4af37] mx-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="#120e0c" stroke="currentColor" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              <circle cx="12" cy="16" r="1.5" fill="currentColor" />
+              <path d="M12 17.5v2" />
+            </svg>
+          </div>
+          <span class="text-[10px] tracking-widest text-[#d4af37]/70">【手稿密存 · 密语解禁】</span>
+          
+          <!-- Password unlock input -->
+          <div class="w-full max-w-sm flex flex-col gap-2 mx-auto mt-2">
+            <div class="flex border border-[#d4af37]/40 rounded overflow-hidden bg-[#120e0c]">
+              <input 
+                v-model="pwdInput"
+                type="password"
+                @keydown.enter="handleUnlock"
+                placeholder="输入启封密语..."
+                class="w-full px-3 py-2 text-xs outline-none bg-transparent text-[#f5f2eb] placeholder-placeholder font-mono"
+              />
+              <button 
+                @click="handleUnlock"
+                class="bg-btn-base hover:bg-btn-hover hover:text-[#d4af37] border-l border-[#d4af37]/40 px-4 text-xs font-bold cursor-pointer text-[#ebdcb9] transition-colors"
+              >
+                启封
+              </button>
+            </div>
+            <p v-if="showError" class="text-xs text-status-bad text-center tracking-wider font-serif">
+              ※ 密语不匹配，手稿未能启封！
+            </p>
+          </div>
+        </div>
 
-    <!-- 3. RESET PASSWORD PANEL -->
-    <div v-else-if="showResetPanel" class="flex flex-col gap-2 py-1 text-xs">
-      <span class="text-[9px] font-serif text-[#ebdcb9]/70 text-center">请输入当前密语以启封手稿</span>
-      <div class="flex border border-[#d4af37]/40 rounded overflow-hidden bg-[#120e0c]">
-        <input 
-          v-model="pwdInput"
-          type="password"
-          @keydown.enter="handleResetPassword"
-          placeholder="当前启封密语..."
-          class="w-full px-2 py-1 text-xs outline-none bg-transparent text-[#f5f2eb] placeholder-placeholder font-mono"
-        />
-      </div>
-      
-      <div class="flex gap-2 justify-end mt-1">
-        <button 
-          @click="showResetPanel = false; pwdInput = ''; showError = false"
-          class="border border-[#d4af37]/35 px-2.5 py-1 rounded text-[10px] bg-[#120e0c] text-[#ebdcb9] hover:bg-[#1a1512] cursor-pointer"
-        >
-          返回
-        </button>
-        <button 
-          @click="handleResetPassword"
-          class="border border-gold/40 px-2.5 py-1 rounded text-[10px] bg-reset text-cream hover:bg-reset-hover cursor-pointer"
-        >
-          解印
-        </button>
-      </div>
-      <p v-if="showError" class="text-[9px] text-status-bad text-center font-serif">
-        ※ 密语不匹配，无法启封手稿！
-      </p>
-    </div>
+        <!-- 2. SETUP PASSWORD PANEL -->
+        <div v-else-if="showSetupPanel" class="flex flex-col gap-3 py-4 text-xs md:text-sm flex-grow justify-center max-w-md mx-auto w-full">
+          <span class="text-xs text-[#ebdcb9]/70 text-center">创设启封密语</span>
+          <input 
+            v-model="setupPwdInput"
+            type="password"
+            placeholder="设定密码密语..."
+            class="border border-[#d4af37]/35 p-2.5 rounded bg-[#120e0c] text-[#f5f2eb] placeholder-placeholder outline-none font-mono focus:border-[#d4af37]"
+          />
+          <input 
+            v-model="setupPwdConfirmInput"
+            type="password"
+            placeholder="再次确认密语..."
+            class="border border-[#d4af37]/35 p-2.5 rounded bg-[#120e0c] text-[#f5f2eb] placeholder-placeholder outline-none font-mono focus:border-[#d4af37]"
+          />
+          
+          <div class="flex gap-2 justify-end mt-1">
+            <button 
+              @click="showSetupPanel = false; showSetupError = false"
+              class="border border-[#d4af37]/35 px-4 py-1.5 rounded text-xs bg-[#120e0c] text-[#ebdcb9] hover:bg-[#1a1512] cursor-pointer"
+            >
+              取消
+            </button>
+            <button 
+              @click="handleSetPassword"
+              class="border border-[#d4af37]/40 px-4 py-1.5 rounded text-xs bg-btn-base text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] transition-all cursor-pointer font-bold"
+            >
+              保存密记
+            </button>
+          </div>
+          <p v-if="showSetupError" class="text-xs text-status-bad text-center font-serif">
+            ※ 密语为空或两次输入不一致！
+          </p>
+        </div>
 
-    <!-- 4. ACTIVE NOTES VIEW -->
-    <textarea 
-      v-else
-      v-model="notesText"
-      class="w-full h-[110px] bg-[#120e0c]/90 border border-[#d4af37]/35 p-2 rounded text-xs text-[#f5f2eb] font-medium outline-none resize-none shadow-[inset_0_2px_6px_rgba(0,0,0,0.8)] focus:border-[#d4af37]/75 transition-all font-serif leading-relaxed"
-      placeholder="在此记录手稿珍籍..."
-    ></textarea>
+        <!-- 3. RESET PASSWORD PANEL -->
+        <div v-else-if="showResetPanel" class="flex flex-col gap-3 py-4 text-xs md:text-sm flex-grow justify-center max-w-md mx-auto w-full">
+          <span class="text-xs text-[#ebdcb9]/70 text-center">请输入当前密码以启封解开记事本</span>
+          <div class="flex border border-[#d4af37]/40 rounded overflow-hidden bg-[#120e0c]">
+            <input 
+              v-model="pwdInput"
+              type="password"
+              @keydown.enter="handleResetPassword"
+              placeholder="当前启封密语..."
+              class="w-full px-3 py-2 text-xs outline-none bg-transparent text-[#f5f2eb] placeholder-placeholder font-mono"
+            />
+          </div>
+          
+          <div class="flex gap-2 justify-end mt-1">
+            <button 
+              @click="showResetPanel = false; pwdInput = ''; showError = false"
+              class="border border-[#d4af37]/35 px-4 py-1.5 rounded text-xs bg-[#120e0c] text-[#ebdcb9] hover:bg-[#1a1512] cursor-pointer"
+            >
+              返回
+            </button>
+            <button 
+              @click="handleResetPassword"
+              class="border border-gold/40 px-4 py-1.5 rounded text-xs bg-reset text-cream hover:bg-reset-hover cursor-pointer"
+            >
+              解印
+            </button>
+          </div>
+          <p v-if="showError" class="text-xs text-status-bad text-center font-serif">
+            ※ 密语不匹配，无法启封手稿！
+          </p>
+        </div>
+
+        <!-- 4. ACTIVE NOTE EDITOR -->
+        <div v-else class="flex flex-col gap-2 flex-grow">
+          <textarea 
+            v-model="activeNote.content"
+            @input="handleContentInput"
+            class="w-full min-h-[380px] lg:min-h-[420px] bg-[#120e0c]/90 border border-[#d4af37]/35 p-3.5 rounded text-xs md:text-sm text-[#f5f2eb] font-medium outline-none resize-none shadow-[inset_0_2px_6px_rgba(0,0,0,0.8)] focus:border-[#d4af37]/75 transition-all font-serif leading-relaxed flex-grow"
+            placeholder="在此手书笔录灵感珍册..."
+          ></textarea>
+          <div class="text-[9px] text-[#ebdcb9]/40 text-right italic select-none">
+            最后修订：{{ new Date(activeNote.updatedAt).toLocaleString() }}
+          </div>
+        </div>
+      </div>
     </div>
-    </Transition>
-  </MangaCard>
+  </div>
 </template>
 
 <style scoped>

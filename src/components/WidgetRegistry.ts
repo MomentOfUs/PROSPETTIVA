@@ -100,5 +100,32 @@ export const availableWidgets: WidgetDef[] = [
     defaultEnabled: true,
     position: 'dashboard',
     component: defineAsyncComponent(() => import('./widgets/MangaWeight.vue'))
+  },
+  {
+    id: 'snippet',
+    name: '秘法咒语快传',
+    description: '快速保存与复制高频命令或常用话术片段',
+    icon: 'FileCode',
+    defaultEnabled: true,
+    position: 'dashboard',
+    component: defineAsyncComponent(() => import('./widgets/MangaSnippet.vue'))
+  },
+  {
+    id: 'devtools',
+    name: '天工开物换算仪',
+    description: '时间戳、JSON 美化与 Base64 编解码效率工具',
+    icon: 'Wrench',
+    defaultEnabled: true,
+    position: 'dashboard',
+    component: defineAsyncComponent(() => import('./widgets/MangaDevTools.vue'))
+  },
+  {
+    id: 'countdown',
+    name: '命途星纪倒计时',
+    description: '纪念日、节假日及重要上线 Deadline 计时盘',
+    icon: 'Hourglass',
+    defaultEnabled: true,
+    position: 'dashboard',
+    component: defineAsyncComponent(() => import('./widgets/MangaCountdown.vue'))
   }
 ]

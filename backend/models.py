@@ -65,6 +65,25 @@ class WeightRecord(SQLModel, table=True):
     hip: Optional[float] = Field(default=None)
     note: Optional[str] = Field(default=None)
 
+# 8. 秘法咒语卡片表
+class SnippetItem(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    title: str
+    content: str
+    category: str = Field(default="通用")
+    color: str = Field(default="#6e5020")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# 9. 命途星纪倒计时表
+class CountdownItem(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    title: str
+    target_date: str  # YYYY-MM-DD format, e.g. "2026-06-18"
+    category: str = Field(default="工作")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 # ==================== DTO 数据传输交互类 ====================
 
 # 账号注册输入
@@ -97,3 +116,5 @@ class SyncPayload(SQLModel):
     note_content: Optional[str] = None
     note_password_hash: Optional[str] = None
     weights: List[WeightRecord] = []
+    snippets: List[SnippetItem] = []
+    countdowns: List[CountdownItem] = []

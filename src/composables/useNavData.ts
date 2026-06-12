@@ -4,6 +4,7 @@
  */
 import { ref, watch } from 'vue'
 import { triggerCloudPush } from '../utils/api'
+import { availableWidgets } from '../components/WidgetRegistry'
 
 export interface Group {
   id: string
@@ -45,7 +46,10 @@ const DEFAULT_CONFIG: Config = {
     aichat: true,
     todo: false,
     notes: false,
-    weight: true
+    weight: true,
+    snippet: true,
+    devtools: true,
+    countdown: true
   },
   openaiKey: '',
   openaiBase: 'https://api.deepseek.com',
@@ -106,7 +110,16 @@ export function useNavData() {
           return item
         })
 
-        config.value = JSON.parse(storedConfig)
+        const parsedConfig = JSON.parse(storedConfig)
+        if (!parsedConfig.widgets) {
+          parsedConfig.widgets = {}
+        }
+        for (const key of Object.keys(DEFAULT_CONFIG.widgets)) {
+          if (parsedConfig.widgets[key] === undefined) {
+            parsedConfig.widgets[key] = DEFAULT_CONFIG.widgets[key]
+          }
+        }
+        config.value = parsedConfig
 
         // 修正旧版 logoText
         if (['MANGA NAV', 'MANGA DASH', 'ARTISAN NAV'].includes(config.value.logoText)) {
@@ -244,6 +257,32 @@ export function useNavData() {
       reader.readAsText(file)
     })
   }
+
+  // Keep config.widgets and items in sync (only for 'dashboard' widgets)
+  watch(() => config.value.widgets, (newWidgets) => {
+    if (!newWidgets) return
+    const dashboardWidgets = availableWidgets.filter(w => w.position === 'dashboard')
+    
+    dashboardWidgets.forEach(w => {
+      const isEnabled = !!newWidgets[w.id]
+      const itemIdx = items.value.findIndex(i => i.url === `#widget:${w.id}`)
+      
+      if (isEnabled && itemIdx === -1) {
+        items.value.push({
+          id: `widget_${w.id}`,
+          groupId: groups.value[0]?.id || 'g1',
+          title: w.name,
+          url: `#widget:${w.id}`,
+          description: w.description,
+          icon: w.icon,
+          color: '#6e5020',
+          size: 'normal'
+        })
+      } else if (!isEnabled && itemIdx !== -1) {
+        items.value.splice(itemIdx, 1)
+      }
+    })
+  }, { deep: true, immediate: true })
 
   return {
     groups,

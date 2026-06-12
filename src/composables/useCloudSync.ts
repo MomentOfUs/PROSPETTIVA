@@ -68,6 +68,8 @@ export function useCloudSync(
       if (cloudData.note_content) localStorage.setItem('manga_widget_notes', cloudData.note_content)
       if (cloudData.note_password_hash) localStorage.setItem('manga_widget_notes_pwd', cloudData.note_password_hash)
       if (cloudData.weights) localStorage.setItem('manga_weight_records', JSON.stringify(cloudData.weights))
+      if (cloudData.snippets) localStorage.setItem('manga_widget_snippets', JSON.stringify(cloudData.snippets))
+      if (cloudData.countdowns) localStorage.setItem('manga_widget_countdowns', JSON.stringify(cloudData.countdowns))
 
       window.dispatchEvent(new Event('manga-config-updated'))
       window.dispatchEvent(new Event('artisan-cloud-data-pulled'))
@@ -108,7 +110,9 @@ export function useCloudSync(
       todos: JSON.parse(localStorage.getItem('manga_todo_items') || '[]'),
       note_content: localStorage.getItem('manga_widget_notes') || '',
       note_password_hash: localStorage.getItem('manga_widget_notes_pwd') || '',
-      weights: JSON.parse(localStorage.getItem('manga_weight_records') || '[]')
+      weights: JSON.parse(localStorage.getItem('manga_weight_records') || '[]'),
+      snippets: JSON.parse(localStorage.getItem('manga_widget_snippets') || '[]'),
+      countdowns: JSON.parse(localStorage.getItem('manga_widget_countdowns') || '[]')
     }
     await api.push(payload as Parameters<typeof api.push>[0])
   }
