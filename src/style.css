@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Background Layer ── */
+  --color-bg-base: #120e0c;
+  --color-bg-paper: #1a1510;
+  --color-bg-surface: #1a1512;
+  --color-bg-modal: #14110f;
+  --color-bg-input: #120e0c;
+
+  /* ── Interactive Layer ── */
+  --color-btn-base: #221c19;
+  --color-btn-hover: #3d2b1f;
+  --color-btn-active: #1a1512;
+
+  /* ── Gold Accent Scale ── */
+  --color-gold: #d4af37;
+  --color-parchment: #ebdcb9;
+  --color-cream: #f5f2eb;
+
+  /* ── Card Colors (Navigation Items) ── */
+  --color-card-crimson: #4a161b;
+  --color-card-green: #152e24;
+  --color-card-azure: #18283b;
+  --color-card-amber: #6e5020;
+  --color-card-walnut: #2e1f18;
+  --color-card-ash: #2b2b2e;
+
+  /* ── Semantic Status ── */
+  --color-status-good: #8fbc8f;
+  --color-status-warn: #d4a843;
+  --color-status-bad: #c4736e;
+  --color-status-info: #7ba4b5;
+  --color-status-neutral: #9b8e7a;
+
+  /* ── Placeholder ── */
+  --color-placeholder: #8b7d6b;
+
+  /* ── Chat Bubbles ── */
+  --color-chat-user: #1a3a5c;
+  --color-chat-ai: #3d3429;
+
+  /* ── Progress Bars ── */
+  --color-progress-cpu: #ebdcb9;
+  --color-progress-ram: #d4af37;
+  --color-progress-disk: #6e5020;
+
+  /* ── Delete / Danger ── */
+  --color-delete: #8b3a3a;
+  --color-delete-hover: #a04040;
+  --color-reset: #6e1e24;
+  --color-reset-hover: #8b2828;
+
+  /* ── Focus Ring ── */
+  --color-focus-ring: #d4af37;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Global Focus-Visible Styles (Accessibility — WCAG 2.4.7)
+   ═══════════════════════════════════════════════════════ */
+
+/* Inputs, selects, textareas */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+/* Checkboxes & radios — use outline for visibility */
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+/* All native buttons */
+button:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+/* Links */
+a:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Collapse Transition for Widget Cards
+   ═══════════════════════════════════════════════════════ */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+.collapse-enter-from,
+.collapse-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.collapse-enter-to,
+.collapse-leave-from {
+  opacity: 1;
+  max-height: 600px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Scrollbar Styles — Dark Theme
+   ═══════════════════════════════════════════════════════ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3d2b1f #120e0c;
+}
+
+/* Chrome / Safari / Edge */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #120e0c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d2b1f;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6e5020;
+}
+
+/* Prevent horizontal overflow on body */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
