@@ -13,19 +13,18 @@ interface WeightRecord {
   date: string
   weight: number
   bodyFat?: number
-  waist?: number // 腰围 cm
-  hip?: number   // 臀围 cm
+  waist?: number
+  hip?: number
   note?: string
 }
 
 const records = ref<WeightRecord[]>([])
-const height = ref(175) // cm
-const targetWeight = ref(70) // kg
-const birthYear = ref(1995) // 出生年份
+const height = ref(175)
+const targetWeight = ref(70)
+const birthYear = ref(1995)
 const gender = ref<'male' | 'female'>('male')
-const activityLevel = ref(1.375) // 活动系数
+const activityLevel = ref(1.375)
 
-// Form states for adding (Card & Modal shared/synced)
 const inputWeight = ref<number | null>(null)
 const inputBodyFat = ref<number | null>(null)
 const inputWaist = ref<number | null>(null)
@@ -33,7 +32,6 @@ const inputHip = ref<number | null>(null)
 const inputDate = ref(new Date().toISOString().split('T')[0])
 const inputNote = ref('')
 
-// Form states for editing
 const editingRecordId = ref<string | null>(null)
 const editWeight = ref<number | null>(null)
 const editBodyFat = ref<number | null>(null)
@@ -42,13 +40,9 @@ const editHip = ref<number | null>(null)
 const editDate = ref('')
 const editNote = ref('')
 
-// Search state
 const searchQuery = ref('')
 
-// Statistics Expand state
-
-// Big Chart options in modal
-const bigChartRange = ref<7 | 30 | 0>(7) // 7 days, 30 days, 0 (all)
+const bigChartRange = ref<7 | 30 | 0>(7)
 const bigChartType = ref<'weight' | 'bodyFat' | 'waist'>('weight')
 
 function loadData() {
@@ -60,15 +54,14 @@ function loadData() {
       records.value = []
     }
   } else {
-    // Mock records: 7 days ago to today
     records.value = [
-      { id: 'r1', date: '2026-06-06', weight: 75.2, bodyFat: 21.0, waist: 88, hip: 96, note: '文艺大餐了一顿' },
-      { id: 'r2', date: '2026-06-07', weight: 74.8, bodyFat: 20.8, waist: 87, hip: 96, note: '负重急行3公里' },
-      { id: 'r3', date: '2026-06-08', weight: 74.3, bodyFat: 20.5, waist: 86, hip: 95, note: '节食静修一日' },
-      { id: 'r4', date: '2026-06-09', weight: 74.5, bodyFat: 20.6, waist: 87, hip: 95, note: '宵夜大危机' },
-      { id: 'r5', date: '2026-06-10', weight: 73.8, bodyFat: 20.2, waist: 85, hip: 94, note: '健身房挥汗举铁' },
-      { id: 'r6', date: '2026-06-11', weight: 73.4, bodyFat: 19.9, waist: 85, hip: 94, note: '重力势能降低！' },
-      { id: 'r7', date: '2026-06-12', weight: 72.8, bodyFat: 19.5, waist: 84, hip: 93, note: '星轨大盘逼近目标' }
+      { id: 'r1', date: '2026-06-06', weight: 75.2, bodyFat: 21.0, waist: 88, hip: 96, note: 'BIG_FEAST' },
+      { id: 'r2', date: '2026-06-07', weight: 74.8, bodyFat: 20.8, waist: 87, hip: 96, note: 'FAST_WALK_3KM' },
+      { id: 'r3', date: '2026-06-08', weight: 74.3, bodyFat: 20.5, waist: 86, hip: 95, note: 'FAST_DAY' },
+      { id: 'r4', date: '2026-06-09', weight: 74.5, bodyFat: 20.6, waist: 87, hip: 95, note: 'LATE_SNACK_CRISIS' },
+      { id: 'r5', date: '2026-06-10', weight: 73.8, bodyFat: 20.2, waist: 85, hip: 94, note: 'GYM_IRON' },
+      { id: 'r6', date: '2026-06-11', weight: 73.4, bodyFat: 19.9, waist: 85, hip: 94, note: 'GRAVITY_DOWN!' },
+      { id: 'r7', date: '2026-06-12', weight: 72.8, bodyFat: 19.5, waist: 84, hip: 93, note: 'CLOSE_TO_TARGET' }
     ]
   }
 
@@ -118,13 +111,12 @@ watch(activityLevel, (newVal) => {
   triggerCloudPush()
 })
 
-// Add new weight record
 function handleAddRecord() {
   if (!inputWeight.value || inputWeight.value <= 0) {
-    alert('请输入有效的体重数值')
+    alert('[ERROR] INVALID_WEIGHT')
     return
   }
-  
+
   records.value.push({
     id: Date.now().toString(),
     date: inputDate.value || new Date().toISOString().split('T')[0],
@@ -134,21 +126,19 @@ function handleAddRecord() {
     hip: inputHip.value || undefined,
     note: inputNote.value.trim() || undefined
   })
-  
-  // Sort by date
+
   records.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  
-  // Reset fields
+
   inputWeight.value = null
   inputBodyFat.value = null
   inputWaist.value = null
   inputHip.value = null
   inputNote.value = ''
-  
+
 }
 
 function deleteRecord(id: string) {
-  if (confirm('确定要删除这条体重记录吗？')) {
+  if (confirm('[ DESTROY ] ?')) {
     records.value = records.value.filter(r => r.id !== id)
     if (editingRecordId.value === id) {
       editingRecordId.value = null
@@ -156,7 +146,6 @@ function deleteRecord(id: string) {
   }
 }
 
-// Edit Record Helpers
 function startEdit(r: WeightRecord) {
   editingRecordId.value = r.id
   editWeight.value = r.weight
@@ -173,7 +162,7 @@ function cancelEdit() {
 
 function saveEdit(id: string) {
   if (!editWeight.value || editWeight.value <= 0) {
-    alert('请输入有效的体重数值')
+    alert('[ERROR] INVALID_WEIGHT')
     return
   }
   const record = records.value.find(r => r.id === id)
@@ -184,40 +173,35 @@ function saveEdit(id: string) {
     record.hip = editHip.value || undefined
     record.date = editDate.value
     record.note = editNote.value.trim() || undefined
-    
-    // Sort records by date
+
     records.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   }
   editingRecordId.value = null
 }
 
-// Reset data to defaults
 function resetToMock() {
-  if (confirm('确定要重置并恢复经典测星轨 Mock 数据吗？当前记录将被覆盖。')) {
+  if (confirm('[ RESET ] ? [WILL_OVERWRITE]')) {
     localStorage.removeItem('manga_weight_records')
     loadData()
   }
 }
 
-// Clear all records
 function clearAllRecords() {
-  if (confirm('警告！确定要清空所有体重记录吗？此操作无法撤销！')) {
+  if (confirm('[ DESTROY_ALL ] ? [IRREVERSIBLE]')) {
     records.value = []
   }
 }
 
-// Data search/filter
 const filteredHistoryRecords = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
   if (!query) return records.value
-  return records.value.filter(r => 
-    r.date.includes(query) || 
+  return records.value.filter(r =>
+    r.date.includes(query) ||
     (r.note && r.note.toLowerCase().includes(query)) ||
     r.weight.toString().includes(query)
   )
 })
 
-// Computations
 const latestRecord = computed(() => {
   if (records.value.length === 0) return null
   return records.value[records.value.length - 1]
@@ -231,20 +215,18 @@ const bmi = computed(() => {
 
 const bmiStatus = computed(() => {
   const val = bmi.value
-  if (val <= 0) return { label: '无数据', class: 'text-status-neutral', desc: '暂无测定' }
-  if (val < 18.5) return { label: '轻盈灵动', class: 'text-status-info', desc: '宜补充膳食营养' }
-  if (val < 24.0) return { label: '匀称适中', class: 'text-status-good', desc: '完美状态，继续保持' }
-  if (val < 28.0) return { label: '丰腴稳健', class: 'text-status-warn', desc: '重力势能微幅偏高' }
-  return { label: '厚重超凡', class: 'text-status-bad', desc: '需控制星轨重力' }
+  if (val <= 0) return { label: 'NO_DATA', class: 'text-status-neutral', desc: '// VOID //' }
+  if (val < 18.5) return { label: 'LIGHT', class: 'text-status-info', desc: 'EAT_MORE' }
+  if (val < 24.0) return { label: 'FIT', class: 'text-status-good', desc: 'PERFECT' }
+  if (val < 28.0) return { label: 'PLUMP', class: 'text-status-warn', desc: 'SLIGHTLY_HIGH' }
+  return { label: 'HEAVY', class: 'text-status-bad', desc: 'CONTROL_NEEDED' }
 })
 
-// Age calculation
 const age = computed(() => {
   const currentYear = new Date().getFullYear()
   return Math.max(1, currentYear - birthYear.value)
 })
 
-// BMR (Harris-Benedict Equation)
 const bmr = computed(() => {
   if (records.value.length === 0 || !height.value) return 0
   const w = latestRecord.value ? latestRecord.value.weight : targetWeight.value
@@ -257,12 +239,10 @@ const bmr = computed(() => {
   }
 })
 
-// TDEE (Total Daily Energy Expenditure)
 const tdee = computed(() => {
   return Math.round(bmr.value * activityLevel.value)
 })
 
-// WHR (Waist to Hip Ratio)
 const whr = computed(() => {
   if (!latestRecord.value || !latestRecord.value.waist || !latestRecord.value.hip) return 0
   return Number((latestRecord.value.waist / latestRecord.value.hip).toFixed(2))
@@ -270,49 +250,45 @@ const whr = computed(() => {
 
 const whrStatus = computed(() => {
   const val = whr.value
-  if (val <= 0) return { label: '未测量', class: 'text-status-neutral', desc: '腰围及臀围未录入' }
+  if (val <= 0) return { label: 'N/A', class: 'text-status-neutral', desc: 'NO_WAIST_HIP' }
   if (gender.value === 'male') {
-    if (val < 0.90) return { label: '匀称对称', class: 'text-status-good', desc: '身段比例标准，健康度佳' }
-    if (val <= 0.95) return { label: '比例微宽', class: 'text-status-warn', desc: '腹腔脂肪稍厚，宜有氧' }
-    return { label: '浑圆沉重', class: 'text-status-bad', desc: '中心重力聚集，预警风险' }
+    if (val < 0.90) return { label: 'SYMMETRIC', class: 'text-status-good', desc: 'HEALTHY' }
+    if (val <= 0.95) return { label: 'WIDE_RATIO', class: 'text-status-warn', desc: 'CARDIO_NEEDED' }
+    return { label: 'ROUND', class: 'text-status-bad', desc: 'WARNING' }
   } else {
-    if (val < 0.80) return { label: '黄金身型', class: 'text-status-good', desc: '优雅黄金比例，继续维持' }
-    if (val <= 0.85) return { label: '丰姿微起', class: 'text-status-warn', desc: '身段微显丰盈，适度控糖' }
-    return { label: '体态丰腴', class: 'text-status-bad', desc: '腰围占比偏高，宜力量训练' }
+    if (val < 0.80) return { label: 'GOLDEN', class: 'text-status-good', desc: 'MAINTAIN' }
+    if (val <= 0.85) return { label: 'SLIGHTLY_PLUMP', class: 'text-status-warn', desc: 'WATCH_SUGAR' }
+    return { label: 'FULL_FIGURE', class: 'text-status-bad', desc: 'STRENGTH_TRAIN' }
   }
 })
 
-// Progress percentage towards target
 const targetProgressPercent = computed(() => {
   if (records.value.length === 0) return 0
   const start = records.value[0].weight
   const current = latestRecord.value ? latestRecord.value.weight : start
   const target = targetWeight.value
-  
+
   if (start === target) return 100
   const totalNeed = start - target
   const achieved = start - current
-  
+
   if (totalNeed > 0) {
-    // weight loss
     if (current <= target) return 100
     if (current >= start) return 0
     return Math.min(100, Math.max(0, Math.round((achieved / totalNeed) * 100)))
   } else {
-    // weight gain
     if (current >= target) return 100
     if (current <= start) return 0
     return Math.min(100, Math.max(0, Math.round((achieved / totalNeed) * 100)))
   }
 })
 
-// BIG CHART LOGIC (Modal view, quantative with coordinates)
 const bigChartRecords = computed(() => {
   let list = records.value
   if (bigChartRange.value > 0) {
     list = records.value.slice(-bigChartRange.value)
   }
-  
+
   if (bigChartType.value === 'bodyFat') {
     return list.filter(r => r.bodyFat !== undefined && r.bodyFat > 0)
   } else if (bigChartType.value === 'waist') {
@@ -339,7 +315,7 @@ const bigSvgPoints = computed(() => {
     if (bigChartType.value === 'waist') return r.waist || 0
     return r.weight
   })
-  
+
   const minV = Math.max(0, Math.min(...values) - 1.0)
   const maxV = Math.max(...values) + 1.0
   const range = maxV - minV || 1
@@ -373,7 +349,7 @@ const bigSvgAreaPathString = computed(() => {
 const bigSvgYTicks = computed(() => {
   const ptsRecords = bigChartRecords.value
   if (ptsRecords.length === 0) return []
-  
+
   const values = ptsRecords.map(r => {
     if (bigChartType.value === 'bodyFat') return r.bodyFat || 0
     if (bigChartType.value === 'waist') return r.waist || 0
@@ -396,8 +372,7 @@ const bigSvgYTicks = computed(() => {
 const bigSvgXTicks = computed(() => {
   const pts = bigSvgPoints.value
   if (pts.length === 0) return []
-  
-  // Only show up to 6 date ticks to prevent overlapping
+
   const ticks = []
   const maxTicks = 6
   if (pts.length <= maxTicks) {
@@ -409,7 +384,6 @@ const bigSvgXTicks = computed(() => {
         ticks.push(pts[i])
       }
     }
-    // Always include last element
     if (!ticks.includes(pts[pts.length - 1])) {
       ticks.push(pts[pts.length - 1])
     }
@@ -417,7 +391,6 @@ const bigSvgXTicks = computed(() => {
   }
 })
 
-// Export / Import Data helpers
 function exportData() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
     records: records.value,
@@ -458,12 +431,12 @@ function handleImport(event: Event) {
         if (parsed.birthYear) birthYear.value = Number(parsed.birthYear)
         if (parsed.gender) gender.value = parsed.gender
         if (parsed.activityLevel) activityLevel.value = Number(parsed.activityLevel)
-        alert('导入成功，星盘重力轨迹已合并更新！')
+        alert('[OK] IMPORT_COMPLETE')
       } else {
-        alert('格式错误，未能识别星盘记录数据。')
+        alert('[ERROR] PARSE_FAIL')
       }
     } catch {
-      alert('解析失败，请确保导入有效的数据文件。')
+      alert('[ERROR] INVALID_FILE')
     }
   }
   reader.readAsText(file)
@@ -473,96 +446,96 @@ function handleImport(event: Event) {
 
 <template>
   <!-- Preview Mode -->
-  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1 font-serif py-1 text-cream w-full">
+  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1 font-mono py-1 text-neutral-300 w-full">
     <div v-if="latestRecord" class="flex flex-col items-center gap-0.5">
-      <div class="text-xl font-bold font-mono tracking-tight text-gold">
-        {{ latestRecord.weight }} <span class="text-[9px] font-serif opacity-75">kg</span>
+      <div class="text-xl font-bold font-mono tracking-tight text-accent">
+        {{ latestRecord.weight }} <span class="text-[9px] font-mono opacity-75">kg</span>
       </div>
       <div class="flex gap-2 text-[9px] opacity-85 mt-0.5">
-        <span class="bg-[#120e0c]/60 border border-[#d4af37]/15 px-1.5 py-0.2 rounded text-parchment">BMI: {{ bmi }}</span>
-        <span v-if="latestRecord.bodyFat" class="bg-[#120e0c]/60 border border-[#d4af37]/15 px-1.5 py-0.2 rounded text-parchment">体脂: {{ latestRecord.bodyFat }}%</span>
+        <span class="bg-surface border border-border-dim px-1.5 py-0.2 text-neutral-400">BMI: {{ bmi }}</span>
+        <span v-if="latestRecord.bodyFat" class="bg-surface border border-border-dim px-1.5 py-0.2 text-neutral-400">BF%: {{ latestRecord.bodyFat }}%</span>
       </div>
     </div>
-    <div v-else class="text-center text-[9px] text-gold/40 py-2 italic">
-      暂无星体运行记录。
+    <div v-else class="text-center text-[9px] text-neutral-600 py-2 italic">
+      // EMPTY //
     </div>
   </div>
 
   <!-- Full Mode -->
-  <div v-else class="w-full flex flex-col gap-5 font-bold font-serif text-cream">
+  <div v-else class="w-full flex flex-col gap-5 font-bold font-mono text-neutral-300">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-[#d4af37]/20 pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-[#ebdcb9]">⚖️ 天体重量运行规</span>
+    <div class="flex items-center justify-between border-b border-line pb-2.5">
+      <span class="text-xs uppercase tracking-widest text-neutral-400">[ BIO ]</span>
     </div>
 
     <!-- Top: Large Quantitative Astronomy Line Chart -->
-    <div class="border border-[#d4af37]/35 rounded p-4 bg-[#120e0c]/85 shadow-lg flex flex-col gap-3">
-      <div class="border-b border-[#d4af37]/20 pb-1.5 flex justify-between items-center">
-        <span class="text-sm font-semibold tracking-wider text-[#d4af37] flex items-center gap-1.5">
-          📈 星重轨迹大谱线 (Astronomical Plot Chart)
+    <div class="border border-line p-4 bg-surface flex flex-col gap-3 ">
+      <div class="border-b border-line pb-1.5 flex justify-between items-center">
+        <span class="text-sm font-semibold tracking-wider text-accent flex items-center gap-1.5">
+          CHART // WEIGHT TRAJECTORY
         </span>
         <div class="flex items-center gap-4">
           <!-- Metric switches -->
-          <div class="flex border border-[#d4af37]/30 rounded bg-[#120e0c] overflow-hidden text-[9px]">
-            <button 
+          <div class="flex border border-border-dim bg-base overflow-hidden text-[9px]">
+            <button
               @click="bigChartType = 'weight'"
-              class="px-2.5 py-0.5 cursor-pointer hover:bg-[#1a1512] transition-colors"
-              :class="[bigChartType === 'weight' ? 'bg-[#d4af37]/20 text-[#f5f2eb] font-bold' : 'text-[#ebdcb9]/50']"
+              class="px-2.5 py-0.5 cursor-pointer transition-none"
+              :class="[bigChartType === 'weight' ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              体重
+              WEIGHT
             </button>
-            <button 
+            <button
               @click="bigChartType = 'bodyFat'"
-              class="px-2.5 py-0.5 cursor-pointer border-l border-r border-[#d4af37]/25 hover:bg-[#1a1512] transition-colors"
-              :class="[bigChartType === 'bodyFat' ? 'bg-[#d4af37]/20 text-[#f5f2eb] font-bold' : 'text-[#ebdcb9]/50']"
+              class="px-2.5 py-0.5 cursor-pointer border-l border-r border-border-dim transition-none"
+              :class="[bigChartType === 'bodyFat' ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              体脂
+              BF%
             </button>
-            <button 
+            <button
               @click="bigChartType = 'waist'"
-              class="px-2.5 py-0.5 cursor-pointer hover:bg-[#1a1512] transition-colors"
-              :class="[bigChartType === 'waist' ? 'bg-[#d4af37]/20 text-[#f5f2eb] font-bold' : 'text-[#ebdcb9]/50']"
+              class="px-2.5 py-0.5 cursor-pointer transition-none"
+              :class="[bigChartType === 'waist' ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              腰围
+              WAIST
             </button>
           </div>
 
           <!-- Range switches -->
-          <div class="flex border border-[#d4af37]/30 rounded bg-[#120e0c] overflow-hidden text-[9px]">
-            <button 
+          <div class="flex border border-border-dim bg-base overflow-hidden text-[9px]">
+            <button
               @click="bigChartRange = 7"
-              class="px-2 py-0.5 cursor-pointer hover:bg-[#1a1512] transition-colors"
-              :class="[bigChartRange === 7 ? 'bg-[#ebdcb9] text-[#120e0c] font-bold' : 'text-[#ebdcb9]/60']"
+              class="px-2 py-0.5 cursor-pointer transition-none"
+              :class="[bigChartRange === 7 ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              近7次
+              LAST 7
             </button>
-            <button 
+            <button
               @click="bigChartRange = 30"
-              class="px-2 py-0.5 cursor-pointer border-l border-r border-[#d4af37]/25 hover:bg-[#1a1512] transition-colors"
-              :class="[bigChartRange === 30 ? 'bg-[#ebdcb9] text-[#120e0c] font-bold' : 'text-[#ebdcb9]/60']"
+              class="px-2 py-0.5 cursor-pointer border-l border-r border-border-dim transition-none"
+              :class="[bigChartRange === 30 ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              近30次
+              LAST 30
             </button>
-            <button 
+            <button
               @click="bigChartRange = 0"
-              class="px-2 py-0.5 cursor-pointer hover:bg-[#1a1512] transition-colors"
-              :class="[bigChartRange === 0 ? 'bg-[#ebdcb9] text-[#120e0c] font-bold' : 'text-[#ebdcb9]/60']"
+              class="px-2 py-0.5 cursor-pointer transition-none"
+              :class="[bigChartRange === 0 ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              全部
+              ALL
             </button>
           </div>
         </div>
       </div>
 
-      <div class="w-full h-[200px] bg-[#120e0c]/90 border border-[#d4af37]/20 rounded relative overflow-hidden p-1 shadow-[inset_0_2px_12px_rgba(0,0,0,0.9)] flex items-center justify-center">
-        <div v-if="bigChartRecords.length < 2" class="text-center text-status-neutral/60 py-12">
-          需要录入至少两条带有所选指标的数据以测定星图谱线...
+      <div class="w-full h-[200px] bg-base border border-border-dim relative overflow-hidden p-1 flex items-center justify-center">
+        <div v-if="bigChartRecords.length < 2" class="text-center text-neutral-600 py-12">
+          // NEED 2+ RECORDS WITH SELECTED METRIC
         </div>
-        
+
         <svg v-else class="w-full h-full" viewBox="0 0 580 200">
           <defs>
             <pattern id="big-chart-hatch" width="8" height="8" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="8" x2="8" y2="0" stroke="rgba(212, 175, 55, 0.04)" stroke-width="0.7" />
+              <line x1="0" y1="8" x2="8" y2="0" stroke="rgba(38, 38, 38, 0.3)" stroke-width="0.7" />
             </pattern>
           </defs>
 
@@ -571,22 +544,22 @@ function handleImport(event: Event) {
 
           <!-- Grid horizontal Lines & Y labels -->
           <g v-for="(tick, idx) in bigSvgYTicks" :key="'y-'+idx">
-            <line 
-              :x1="bigSvgConfig.paddingLeft" 
-              :y1="tick.y" 
-              :x2="bigSvgConfig.width - bigSvgConfig.paddingRight" 
-              :y2="tick.y" 
-              stroke="rgba(212, 175, 55, 0.08)" 
-              stroke-width="0.8" 
+            <line
+              :x1="bigSvgConfig.paddingLeft"
+              :y1="tick.y"
+              :x2="bigSvgConfig.width - bigSvgConfig.paddingRight"
+              :y2="tick.y"
+              stroke="#262626"
+              stroke-width="0.8"
               stroke-dasharray="3,3"
             />
-            <text 
-              :x="bigSvgConfig.paddingLeft - 8" 
-              :y="tick.y + 3" 
-              fill="#ebdcb9" 
-              font-size="8px" 
-              text-anchor="end" 
-              font-family="serif"
+            <text
+              :x="bigSvgConfig.paddingLeft - 8"
+              :y="tick.y + 3"
+              fill="#737373"
+              font-size="8px"
+              text-anchor="end"
+              font-family="monospace"
             >
               {{ tick.val }}{{ bigChartType === 'weight' ? 'k' : bigChartType === 'bodyFat' ? '%' : 'c' }}
             </text>
@@ -594,51 +567,49 @@ function handleImport(event: Event) {
 
           <!-- Grid vertical Lines & X labels -->
           <g v-for="(tick, idx) in bigSvgXTicks" :key="'x-'+idx">
-            <line 
-              :x1="tick.x" 
-              :y1="bigSvgConfig.paddingTop" 
-              :x2="tick.x" 
-              :y2="bigSvgConfig.height - bigSvgConfig.paddingBottom" 
-              stroke="rgba(212, 175, 55, 0.05)" 
+            <line
+              :x1="tick.x"
+              :y1="bigSvgConfig.paddingTop"
+              :x2="tick.x"
+              :y2="bigSvgConfig.height - bigSvgConfig.paddingBottom"
+              stroke="#262626"
               stroke-width="0.8"
             />
             <text
               :x="tick.x"
               :y="bigSvgConfig.height - bigSvgConfig.paddingBottom + 12"
-              fill="#ebdcb9"
+              fill="#737373"
               font-size="9px"
               text-anchor="middle"
-              font-family="serif"
+              font-family="monospace"
             >
               {{ tick.record.date.substring(5) }}
             </text>
           </g>
 
           <!-- Graph main Path -->
-          <path 
-            :d="bigSvgPathString" 
-            fill="none" 
-            stroke="#d4af37" 
-            stroke-width="1.8" 
+          <path
+            :d="bigSvgPathString"
+            fill="none"
+            stroke="#FF5F1F"
+            stroke-width="1.8"
             stroke-linecap="round"
             stroke-linejoin="round"
-            filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.5))"
           />
 
           <!-- Graph Nodes -->
           <g v-for="(p, idx) in bigSvgPoints" :key="'p-'+idx" :transform="`translate(${p.x}, ${p.y})`">
-            <!-- Astronomical Star Points -->
-            <line x1="-4" y1="0" x2="4" y2="0" stroke="#d4af37" stroke-width="0.8" />
-            <line x1="0" y1="-4" x2="0" y2="4" stroke="#d4af37" stroke-width="0.8" />
-            <circle cx="0" cy="0" r="2.5" fill="#120e0c" stroke="#d4af37" stroke-width="1.2" />
+            <line x1="-4" y1="0" x2="4" y2="0" stroke="#FF5F1F" stroke-width="0.8" />
+            <line x1="0" y1="-4" x2="0" y2="4" stroke="#FF5F1F" stroke-width="0.8" />
+            <circle cx="0" cy="0" r="2.5" fill="#0A0A0A" stroke="#FF5F1F" stroke-width="1.2" />
             <text
               x="0"
               y="-8"
-              fill="#f5f2eb"
+              fill="#d4d4d4"
               font-size="9px"
-              font-family="serif"
+              font-family="monospace"
               text-anchor="middle"
-              class="font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+              class="font-bold"
             >
               {{ p.val }}{{ bigChartType === 'weight' ? '' : bigChartType === 'bodyFat' ? '%' : 'cm' }}
             </text>
@@ -647,69 +618,150 @@ function handleImport(event: Event) {
       </div>
     </div>
 
-    <!-- Main Grid layout for wide viewport -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left side (1/3 width): Measurements and configurations -->
+    <!-- Main Grid layout: left 1/3 (metrics + form), right 2/3 (history) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Left side: New Record + Metrics + Config -->
       <div class="flex flex-col gap-4">
+        <div class="border border-line p-4 bg-surface flex flex-col gap-4">
+      
+          <div class="border-b border-line pb-1.5 flex justify-between items-center">
+            <span class="text-sm font-semibold tracking-wider text-accent">NEW RECORD</span>
+            <span class="text-[9px] text-neutral-500 font-mono uppercase tracking-widest">
+              {{ editingRecordId ? 'EDITING' : 'LOGGING' }}
+            </span>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <div class="flex gap-3">
+              <div class="flex-1 flex flex-col gap-1">
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">DATE</label>
+                <input
+                  v-model="inputDate"
+                  type="date"
+                  class="border border-border-dim p-1.5 bg-base text-neutral-300 outline-none font-mono"
+                />
+              </div>
+              <div class="flex-1 flex flex-col gap-1">
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">WT (KG) *</label>
+                <input
+                  v-model.number="inputWeight"
+                  type="number"
+                  step="0.1"
+                  placeholder="72.5"
+                  class="border border-border-dim p-1.5 bg-base text-neutral-300 outline-none font-bold"
+                />
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <div class="flex-1 flex flex-col gap-1">
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">BF%</label>
+                <input
+                  v-model.number="inputBodyFat"
+                  type="number"
+                  step="0.1"
+                  placeholder="19.5"
+                  class="border border-border-dim p-1.5 bg-base text-neutral-300 outline-none"
+                />
+              </div>
+              <div class="flex-1 flex flex-col gap-1">
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">W/H (CM)</label>
+                <div class="flex gap-1.5">
+                  <input
+                    v-model.number="inputWaist"
+                    type="number"
+                    step="0.5"
+                    placeholder="82"
+                    class="flex-1 border border-border-dim p-1.5 bg-base text-neutral-300 outline-none"
+                  />
+                  <input
+                    v-model.number="inputHip"
+                    type="number"
+                    step="0.5"
+                    placeholder="94"
+                    class="flex-1 border border-border-dim p-1.5 bg-base text-neutral-300 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-neutral-500 text-[10px] uppercase tracking-widest">NOTES</label>
+              <textarea
+                v-model="inputNote"
+                rows="2"
+                placeholder="e.g. morning run, diet, notes..."
+                class="border border-border-dim p-1.5 bg-base text-neutral-300 outline-none resize-none"
+              ></textarea>
+            </div>
+
+            <button
+              @click="handleAddRecord"
+              class="border border-line px-4 py-2 mt-2 text-xs bg-base text-neutral-300 hover:bg-neutral-200 hover:text-black transition-none cursor-pointer text-center font-bold"
+            >
+              LOG RECORD
+            </button>
+        </div>
+          </div>
         <!-- 1. Top Indexes and calculated properties -->
-        <div class="border border-[#d4af37]/35 rounded p-4 bg-[#120e0c]/85 shadow-lg flex flex-col gap-3.5">
-          <div class="border-b border-[#d4af37]/20 pb-1.5 flex justify-between items-center">
-            <span class="text-xs font-semibold tracking-wider text-[#d4af37]">🪐 人体经纬与能量测算</span>
-            <span class="text-[9px] bg-btn-base text-[#ebdcb9] border border-[#d4af37]/30 px-2 py-0.5 rounded font-mono">
-              观测人：{{ gender === 'male' ? '绅士 (Male)' : '淑女 (Female)' }} / {{ age }} 岁
+        <div class="border border-line p-4 bg-surface flex flex-col gap-3.5">
+          <div class="border-b border-line pb-1.5 flex justify-between items-center">
+            <span class="text-xs font-semibold tracking-wider text-accent">BODY METRICS</span>
+            <span class="text-[9px] bg-base text-neutral-400 border border-border-dim px-2 py-0.5 font-mono">
+              {{ gender === 'male' ? 'M' : 'F' }} / {{ age }}Y
             </span>
           </div>
 
           <div class="grid grid-cols-2 gap-3 text-center">
-            <div class="border border-[#d4af37]/20 p-2 rounded bg-[#1a1512]/60">
-              <p class="text-[10px] text-[#ebdcb9]/60">最新星重 (Weight)</p>
-              <p class="text-base font-bold text-[#f5f2eb] mt-1">{{ latestRecord ? latestRecord.weight : '--' }} <span class="text-[10px] text-[#ebdcb9]/70">kg</span></p>
+            <div class="border border-border-dim p-2 bg-base">
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">WEIGHT</p>
+              <p class="text-base font-bold text-neutral-300 mt-1">{{ latestRecord ? latestRecord.weight : '--' }} <span class="text-[10px] text-neutral-600">kg</span></p>
             </div>
-            <div class="border border-[#d4af37]/20 p-2 rounded bg-[#1a1512]/60">
-              <p class="text-[10px] text-[#ebdcb9]/60">最新体脂率 (Body Fat)</p>
-              <p class="text-base font-bold text-[#f5f2eb] mt-1">{{ (latestRecord && latestRecord.bodyFat) ? latestRecord.bodyFat : '--' }} <span class="text-[10px] text-[#ebdcb9]/70">%</span></p>
+            <div class="border border-border-dim p-2 bg-base">
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">BODY FAT</p>
+              <p class="text-base font-bold text-neutral-300 mt-1">{{ (latestRecord && latestRecord.bodyFat) ? latestRecord.bodyFat : '--' }} <span class="text-[10px] text-neutral-600">%</span></p>
             </div>
-            <div class="border border-[#d4af37]/20 p-2 rounded bg-[#1a1512]/60">
-              <p class="text-[10px] text-[#ebdcb9]/60">基础代谢率 (BMR)</p>
-              <p class="text-base font-bold text-[#d4af37] mt-1">{{ bmr || '--' }} <span class="text-[10px] text-[#ebdcb9]/70">kcal</span></p>
+            <div class="border border-border-dim p-2 bg-base">
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">BMR</p>
+              <p class="text-base font-bold text-accent mt-1">{{ bmr || '--' }} <span class="text-[10px] text-neutral-600">kcal</span></p>
             </div>
-            <div class="border border-[#d4af37]/20 p-2 rounded bg-[#1a1512]/60">
-              <p class="text-[10px] text-[#ebdcb9]/60">每日总能消耗 (TDEE)</p>
-              <p class="text-base font-bold text-[#ebdcb9] mt-1">{{ tdee || '--' }} <span class="text-[10px] text-[#ebdcb9]/70">kcal</span></p>
+            <div class="border border-border-dim p-2 bg-base">
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">TDEE</p>
+              <p class="text-base font-bold text-neutral-400 mt-1">{{ tdee || '--' }} <span class="text-[10px] text-neutral-600">kcal</span></p>
             </div>
           </div>
 
           <div class="flex flex-col gap-2.5 mt-1">
             <!-- BMI Section -->
-            <div class="border border-[#d4af37]/20 p-2.5 rounded bg-[#1a1512]/40 flex justify-between items-center text-xs">
+            <div class="border border-border-dim p-2.5 bg-base flex justify-between items-center text-xs">
               <div>
-                <span class="text-[10px] text-[#ebdcb9]/50 block">重力质量指数 (BMI)</span>
-                <span class="text-sm font-bold text-[#f5f2eb]">{{ bmi }}</span>
+                <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">BMI</span>
+                <span class="text-sm font-bold text-neutral-300">{{ bmi }}</span>
                 <span class="text-[9px] ml-1.5 font-mono" :class="bmiStatus.class">[{{ bmiStatus.label }}]</span>
               </div>
-              <span class="text-[10px] text-[#ebdcb9]/70 text-right max-w-[140px] leading-tight">{{ bmiStatus.desc }}</span>
+              <span class="text-[10px] text-neutral-600 text-right max-w-[140px] leading-tight">{{ bmiStatus.desc }}</span>
             </div>
 
             <!-- WHR Section -->
-            <div class="border border-[#d4af37]/20 p-2.5 rounded bg-[#1a1512]/40 flex justify-between items-center text-xs">
+            <div class="border border-border-dim p-2.5 bg-base flex justify-between items-center text-xs">
               <div>
-                <span class="text-[10px] text-[#ebdcb9]/50 block">腰臀比例度 (WHR)</span>
-                <span class="text-sm font-bold text-[#f5f2eb]">{{ whr || '--' }}</span>
+                <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">WHR</span>
+                <span class="text-sm font-bold text-neutral-300">{{ whr || '--' }}</span>
                 <span class="text-[9px] ml-1.5 font-mono" :class="whrStatus.class">[{{ whrStatus.label }}]</span>
               </div>
-              <span class="text-[10px] text-[#ebdcb9]/70 text-right max-w-[140px] leading-tight">{{ whrStatus.desc }}</span>
+              <span class="text-[10px] text-neutral-600 text-right max-w-[140px] leading-tight">{{ whrStatus.desc }}</span>
             </div>
           </div>
 
           <!-- Goal Progress Bar -->
-          <div class="border border-[#d4af37]/20 p-2.5 rounded bg-[#1a1512]/40 flex flex-col gap-1.5">
+          <div class="border border-border-dim p-2.5 bg-base flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-[10px]">
-              <span class="text-[#ebdcb9]/50">星轨减重修业目标进度 (目标: {{ targetWeight }} kg)</span>
-              <span class="text-[#d4af37] font-bold">{{ targetProgressPercent }}%</span>
+              <span class="text-neutral-500 uppercase tracking-widest">TARGET {{ targetWeight }}kg</span>
+              <span class="text-accent font-bold">{{ targetProgressPercent }}%</span>
             </div>
-            <div class="w-full h-3 border border-[#d4af37]/35 rounded bg-[#120e0c] relative overflow-hidden p-0.5">
-              <div 
-                class="h-full bg-gradient-to-r from-[#6e5020] to-[#d4af37] rounded-sm transition-all duration-500"
+            <div class="w-full h-3 border border-border-dim bg-base relative overflow-hidden p-0.5">
+              <div
+                class="h-full bg-accent transition-none"
                 :style="{ width: `${targetProgressPercent}%` }"
               ></div>
             </div>
@@ -717,244 +769,164 @@ function handleImport(event: Event) {
         </div>
 
         <!-- 2. Configurations (Birth, Sex, Height, TargetWeight, Activity level) -->
-        <div class="border border-[#d4af37]/35 rounded p-4 bg-[#120e0c]/85 shadow-lg flex flex-col gap-3 text-xs md:text-sm">
-          <div class="border-b border-[#d4af37]/20 pb-1.5">
-            <span class="text-xs font-semibold tracking-wider text-[#ebdcb9]">⚖️ 个人法度修制</span>
+        <div class="border border-line p-4 bg-surface flex flex-col gap-3 text-xs md:text-sm">
+          <div class="border-b border-line pb-1.5">
+            <span class="text-xs font-semibold tracking-wider text-neutral-400 uppercase tracking-widest">CONFIGURATION</span>
           </div>
 
           <div class="flex flex-col gap-2.5 text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-[#ebdcb9]/60">性别 (Gender):</span>
+              <span class="text-neutral-500">GENDER:</span>
               <div class="flex gap-2">
-                <button 
+                <button
                   @click="gender = 'male'"
-                  class="border px-2.5 py-0.5 rounded text-[10px] transition-colors cursor-pointer bg-transparent"
-                  :class="[gender === 'male' ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#f5f2eb]' : 'border-[#d4af37]/20 text-[#ebdcb9]/40']"
+                  class="border px-2.5 py-0.5 text-[10px] transition-none cursor-pointer bg-transparent"
+                  :class="[gender === 'male' ? 'bg-accent/20 border-accent text-neutral-300' : 'border-border-dim text-neutral-600']"
                 >
-                  乾 (男)
+                  MALE
                 </button>
-                <button 
+                <button
                   @click="gender = 'female'"
-                  class="border px-2.5 py-0.5 rounded text-[10px] transition-colors cursor-pointer bg-transparent"
-                  :class="[gender === 'female' ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#f5f2eb]' : 'border-[#d4af37]/20 text-[#ebdcb9]/40']"
+                  class="border px-2.5 py-0.5 text-[10px] transition-none cursor-pointer bg-transparent"
+                  :class="[gender === 'female' ? 'bg-accent/20 border-accent text-neutral-300' : 'border-border-dim text-neutral-600']"
                 >
-                  坤 (女)
+                  FEMALE
                 </button>
               </div>
             </div>
 
             <div class="flex justify-between items-center">
-              <span class="text-[#ebdcb9]/60">出生年份 (Birth Year):</span>
-              <input 
-                v-model.number="birthYear" 
-                type="number" 
-                min="1920" 
+              <span class="text-neutral-500">BIRTH YEAR:</span>
+              <input
+                v-model.number="birthYear"
+                type="number"
+                min="1920"
                 max="2026"
-                class="border border-[#d4af37]/35 p-1 rounded bg-[#120e0c] text-right text-[#f5f2eb] w-[70px] outline-none font-serif text-xs"
+                class="border border-border-dim p-1 bg-base text-right text-neutral-300 w-[70px] outline-none font-mono text-xs"
               />
             </div>
 
             <div class="flex justify-between items-center">
-              <span class="text-[#ebdcb9]/60">测量身高 (Height, cm):</span>
-              <input 
-                v-model.number="height" 
-                type="number" 
-                class="border border-[#d4af37]/35 p-1 rounded bg-[#120e0c] text-right text-[#f5f2eb] w-[70px] outline-none font-serif"
+              <span class="text-neutral-500">HEIGHT (CM):</span>
+              <input
+                v-model.number="height"
+                type="number"
+                class="border border-border-dim p-1 bg-base text-right text-neutral-300 w-[70px] outline-none font-mono"
               />
             </div>
 
             <div class="flex justify-between items-center">
-              <span class="text-[#ebdcb9]/60">目标重力 (Target kg):</span>
-              <input 
-                v-model.number="targetWeight" 
-                type="number" 
+              <span class="text-neutral-500">TARGET (KG):</span>
+              <input
+                v-model.number="targetWeight"
+                type="number"
                 step="0.1"
-                class="border border-[#d4af37]/35 p-1 rounded bg-[#120e0c] text-right text-[#f5f2eb] w-[70px] outline-none font-serif"
+                class="border border-border-dim p-1 bg-base text-right text-neutral-300 w-[70px] outline-none font-mono"
               />
             </div>
 
             <div class="flex flex-col gap-1">
-              <span class="text-[#ebdcb9]/60">日常肉身劳作强度 (Activity):</span>
-              <select 
+              <span class="text-neutral-500">ACTIVITY LEVEL:</span>
+              <select
                 v-model.number="activityLevel"
-                class="border border-[#d4af37]/35 p-1 rounded bg-[#120e0c] text-[#f5f2eb] outline-none w-full font-serif"
+                class="border border-border-dim p-1 bg-base text-neutral-300 outline-none w-full font-mono"
               >
-                <option :value="1.2">静息少动 (静坐修道生活)</option>
-                <option :value="1.375">轻度活动 (每周1-3次舒展)</option>
-                <option :value="1.55">中度活动 (每周3-5次铁炼)</option>
-                <option :value="1.725">重度活动 (每日高负荷苦力)</option>
+                <option :value="1.2">SEDENTARY</option>
+                <option :value="1.375">LIGHT</option>
+                <option :value="1.55">MODERATE</option>
+                <option :value="1.725">HEAVY</option>
               </select>
             </div>
           </div>
 
-          <div class="border-t border-[#d4af37]/20 pt-2.5 flex flex-col gap-2 mt-auto">
-            <span class="text-[9px] text-[#ebdcb9]/40 text-center leading-normal">
-              ※ 本系统严格依照文艺复兴人体测绘及近代 Harris-Benedict 能量算法评估运行轨迹。
+          <div class="border-t border-line pt-2.5 flex flex-col gap-2 mt-auto">
+            <span class="text-[9px] text-neutral-600 text-center leading-normal uppercase tracking-widest">
+              Harris-Benedict Algorithm
             </span>
             <div class="grid grid-cols-2 gap-2">
-              <button @click="resetToMock" class="border border-status-warn/50 text-status-warn hover:bg-status-warn/10 py-1 rounded text-[10px] cursor-pointer text-center font-bold">重置数据</button>
-              <button @click="clearAllRecords" class="border border-status-bad/50 text-status-bad hover:bg-status-bad/10 py-1 rounded text-[10px] cursor-pointer text-center font-bold">清空记录</button>
+              <button @click="resetToMock" class="border border-status-warn/50 text-status-warn py-1 text-[10px] cursor-pointer text-center font-bold transition-none">RESET</button>
+              <button @click="clearAllRecords" class="border border-status-bad/50 text-status-bad py-1 text-[10px] cursor-pointer text-center font-bold transition-none">CLEAR</button>
             </div>
           </div>
         </div>
-      </div>
+      
 
-      <!-- Center: Add / Edit Form & History Log Table -->
-      <!-- Left: Quick Entry / Record Form -->
-      <div class="border border-[#d4af37]/35 rounded p-4 bg-[#120e0c]/85 shadow-lg flex flex-col gap-4">
-          <div class="border-b border-[#d4af37]/20 pb-1.5 flex justify-between items-center">
-            <span class="text-sm font-semibold tracking-wider text-[#d4af37]">✒️ 撰录天体运行轨道</span>
-            <span class="text-[9px] text-[#ebdcb9]/50 font-serif">
-              {{ editingRecordId ? '编辑墨记' : '录入新轨' }}
-            </span>
-          </div>
 
-          <div class="flex flex-col gap-3">
-            <div class="flex gap-3">
-              <div class="flex-1 flex flex-col gap-1">
-                <label class="text-[#ebdcb9]/60">日期</label>
-                <input 
-                  v-model="inputDate" 
-                  type="date" 
-                  class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-[#f5f2eb] outline-none font-mono"
-                />
-              </div>
-              <div class="flex-1 flex flex-col gap-1">
-                <label class="text-[#ebdcb9]/60">体重 (kg) *</label>
-                <input 
-                  v-model.number="inputWeight" 
-                  type="number" 
-                  step="0.1" 
-                  placeholder="如 72.5"
-                  class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-[#f5f2eb] outline-none font-bold"
-                />
-              </div>
-            </div>
+        
 
-            <div class="flex gap-3">
-              <div class="flex-1 flex flex-col gap-1">
-                <label class="text-[#ebdcb9]/60">体脂率 (%)</label>
-                <input 
-                  v-model.number="inputBodyFat" 
-                  type="number" 
-                  step="0.1" 
-                  placeholder="如 19.5"
-                  class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-[#f5f2eb] outline-none"
-                />
-              </div>
-              <div class="flex-1 flex flex-col gap-1">
-                <label class="text-[#ebdcb9]/60">腰围 (cm)</label>
-                <input 
-                  v-model.number="inputWaist" 
-                  type="number" 
-                  step="0.5" 
-                  placeholder="如 82"
-                  class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-[#f5f2eb] outline-none"
-                />
-              </div>
-              <div class="flex-1 flex flex-col gap-1">
-                <label class="text-[#ebdcb9]/60">臀围 (cm)</label>
-                <input 
-                  v-model.number="inputHip" 
-                  type="number" 
-                  step="0.5" 
-                  placeholder="如 94"
-                  class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-[#f5f2eb] outline-none"
-                />
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-[#ebdcb9]/60">修业手札备注</label>
-              <textarea 
-                v-model="inputNote" 
-                rows="2"
-                placeholder="在此录入晨跑、饮食、状态手记..."
-                class="border border-[#d4af37]/35 p-1.5 rounded bg-[#120e0c] text-[#f5f2eb] outline-none resize-none"
-              ></textarea>
-            </div>
-
-            <button 
-              @click="handleAddRecord"
-              class="border border-[#d4af37]/45 px-4 py-2 mt-2 rounded text-xs bg-btn-base text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] transition-all cursor-pointer text-center font-bold shadow-md"
-            >
-              登录大盘星历
-            </button>
-          </div>
         </div>
-
         <!-- Right: Log Chronicle Table -->
-        <div class="border border-[#d4af37]/35 rounded p-4 bg-[#120e0c]/85 shadow-lg flex flex-col gap-3">
-          <div class="border-b border-[#d4af37]/20 pb-1.5 flex justify-between items-center">
-            <span class="text-sm font-semibold tracking-wider text-[#ebdcb9]">📜 星重编年修成史</span>
-            <div class="flex border border-[#d4af37]/25 rounded bg-[#120e0c]/60 overflow-hidden text-[9px]">
-              <input 
-                v-model="searchQuery" 
-                type="text" 
-                placeholder="检索备注/数值..." 
-                class="w-[120px] px-2 py-0.5 outline-none text-[#f5f2eb] bg-transparent placeholder-placeholder"
+        <div class="border border-line p-4 bg-surface flex flex-col gap-3 ">
+          <div class="border-b border-line pb-1.5 flex justify-between items-center">
+            <span class="text-sm font-semibold tracking-wider text-neutral-400 uppercase tracking-widest">HISTORY</span>
+            <div class="flex border border-border-dim bg-base overflow-hidden text-[9px]">
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="SEARCH..."
+                class="w-[120px] px-2 py-0.5 outline-none text-neutral-300 bg-transparent placeholder-neutral-600"
               />
             </div>
           </div>
 
           <!-- History Table -->
-          <div class="flex-grow overflow-y-auto max-h-[200px] border border-[#d4af37]/15 rounded bg-[#120e0c]/40 shadow-inner">
+          <div class="flex-grow overflow-y-auto border border-border-dim bg-base" style="min-height: 200px">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-[#1a1512]/90 border-b border-[#d4af37]/25 text-[10px] text-[#ebdcb9]">
-                  <th class="p-2">日期</th>
-                  <th class="p-2">体重</th>
-                  <th class="p-2">体脂</th>
-                  <th class="p-2">腰臀</th>
-                  <th class="p-2">备注</th>
-                  <th class="p-2 text-right">操作</th>
+                <tr class="bg-surface border-b border-border-dim text-[10px] text-neutral-400 uppercase tracking-widest sticky top-0">
+                  <th class="p-2 w-[80px]">DATE</th>
+                  <th class="p-2 w-[55px]">WT</th>
+                  <th class="p-2 w-[40px]">BF%</th>
+                  <th class="p-2 w-[55px]">W/H</th>
+                  <th class="p-2">NOTE</th>
+                  <th class="p-2 text-right w-[70px]">ACT</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-[#d4af37]/10 text-[10px]">
-                <tr 
-                  v-for="r in filteredHistoryRecords.slice().reverse()" 
+              <tbody class="divide-y divide-border-dim text-[10px]">
+                <tr
+                  v-for="r in filteredHistoryRecords.slice().reverse()"
                   :key="r.id"
-                  class="hover:bg-[#1a1512]/30 transition-colors"
+                  class="hover:bg-surface transition-none"
                 >
                   <!-- Row normal mode -->
                   <template v-if="editingRecordId !== r.id">
                     <td class="p-2 font-mono whitespace-nowrap">{{ r.date }}</td>
-                    <td class="p-2 font-bold">{{ r.weight }} kg</td>
+                    <td class="p-2 font-bold">{{ r.weight }}</td>
                     <td class="p-2">{{ r.bodyFat ? `${r.bodyFat}%` : '--' }}</td>
-                    <td class="p-2 font-mono">{{ (r.waist && r.hip) ? `${r.waist}/${r.hip}` : '--' }}</td>
-                    <td class="p-2 text-[#ebdcb9]/70 truncate max-w-[90px]" :title="r.note">{{ r.note || '--' }}</td>
+                    <td class="p-2 font-mono whitespace-nowrap">{{ (r.waist && r.hip) ? `${r.waist}/${r.hip}` : '--' }}</td>
+                    <td class="p-2 text-neutral-500 truncate" :title="r.note">{{ r.note || '--' }}</td>
                     <td class="p-2 text-right whitespace-nowrap">
-                      <button @click="startEdit(r)" class="text-[#d4af37] hover:text-[#f5f2eb] mr-2 cursor-pointer">✎ 编辑</button>
-                      <button @click="deleteRecord(r.id)" class="text-status-bad hover:text-delete-hover font-bold cursor-pointer">× 删</button>
+                      <button @click="startEdit(r)" class="text-accent hover:text-neutral-300 mr-2 cursor-pointer">EDIT</button>
+                      <button @click="deleteRecord(r.id)" class="text-status-bad hover:text-neutral-300 font-bold cursor-pointer">DEL</button>
                     </td>
                   </template>
-                  
+
                   <!-- Row inline edit mode -->
                   <template v-else>
                     <td class="p-1 whitespace-nowrap">
-                      <input v-model="editDate" type="date" class="border border-[#d4af37]/35 bg-[#120e0c] text-[8px] p-0.5 rounded text-[#f5f2eb] w-[80px]" />
+                      <input v-model="editDate" type="date" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[80px] font-mono" />
                     </td>
                     <td class="p-1">
-                      <input v-model.number="editWeight" type="number" step="0.1" class="border border-[#d4af37]/35 bg-[#120e0c] text-[8px] p-0.5 rounded text-[#f5f2eb] w-[45px] font-bold" />
+                      <input v-model.number="editWeight" type="number" step="0.1" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[45px] font-bold" />
                     </td>
                     <td class="p-1">
-                      <input v-model.number="editBodyFat" type="number" step="0.1" class="border border-[#d4af37]/35 bg-[#120e0c] text-[8px] p-0.5 rounded text-[#f5f2eb] w-[35px]" placeholder="%" />
+                      <input v-model.number="editBodyFat" type="number" step="0.1" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[35px]" placeholder="%" />
                     </td>
                     <td class="p-1 whitespace-nowrap flex gap-0.5">
-                      <input v-model.number="editWaist" type="number" step="0.5" class="border border-[#d4af37]/35 bg-[#120e0c] text-[8px] p-0.5 rounded text-[#f5f2eb] w-[25px]" placeholder="腰" />
-                      <input v-model.number="editHip" type="number" step="0.5" class="border border-[#d4af37]/35 bg-[#120e0c] text-[8px] p-0.5 rounded text-[#f5f2eb] w-[25px]" placeholder="臀" />
+                      <input v-model.number="editWaist" type="number" step="0.5" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[25px]" placeholder="W" />
+                      <input v-model.number="editHip" type="number" step="0.5" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[25px]" placeholder="H" />
                     </td>
                     <td class="p-1">
-                      <input v-model="editNote" type="text" class="border border-[#d4af37]/35 bg-[#120e0c] text-[8px] p-0.5 rounded text-[#f5f2eb] w-full" placeholder="备注..." />
+                      <input v-model="editNote" type="text" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-full" placeholder="..." />
                     </td>
                     <td class="p-1 text-right whitespace-nowrap">
-                      <button @click="saveEdit(r.id)" class="text-status-good hover:text-status-good/80 font-bold mr-1 cursor-pointer">保存</button>
-                      <button @click="cancelEdit" class="text-status-neutral hover:text-parchment cursor-pointer">取消</button>
+                      <button @click="saveEdit(r.id)" class="text-status-good font-bold mr-1 cursor-pointer">SAVE</button>
+                      <button @click="cancelEdit" class="text-neutral-500 cursor-pointer">ESC</button>
                     </td>
                   </template>
                 </tr>
                 <tr v-if="filteredHistoryRecords.length === 0">
-                  <td colspan="6" class="p-4 text-center text-[#ebdcb9]/40 italic font-serif">未观测到任何天体运行历史记录。</td>
+                  <td colspan="6" class="p-4 text-center text-neutral-600 italic font-mono">NO RECORDS FOUND.</td>
                 </tr>
               </tbody>
             </table>
@@ -963,14 +935,14 @@ function handleImport(event: Event) {
     </div>
 
     <!-- Backups controls -->
-    <div class="flex justify-between items-center border-t border-[#d4af37]/20 pt-4 mt-2">
+    <div class="flex justify-between items-center border-t border-line pt-4 mt-2">
       <div class="flex gap-2">
         <input type="file" ref="fileInput" @change="handleImport" class="hidden" />
-        <button @click="exportData" class="border border-[#d4af37]/45 px-3 py-1.5 rounded text-[10px] bg-btn-base text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] transition-all font-bold cursor-pointer">
-          📤 备份并导出星盘数据
+        <button @click="exportData" class="border border-border-dim px-3 py-1.5 text-[10px] bg-base text-neutral-400 hover:text-black transition-none font-bold cursor-pointer">
+          EXPORT JSON
         </button>
-        <button @click="triggerImport" class="border border-[#d4af37]/45 px-3 py-1.5 rounded text-[10px] bg-btn-base text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] transition-all font-bold cursor-pointer">
-          📥 导入备份星盘数据
+        <button @click="triggerImport" class="border border-border-dim px-3 py-1.5 text-[10px] bg-base text-neutral-400 hover:text-black transition-none font-bold cursor-pointer">
+          IMPORT JSON
         </button>
       </div>
     </div>

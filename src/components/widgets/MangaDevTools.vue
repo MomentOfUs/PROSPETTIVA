@@ -84,9 +84,9 @@ async function copyToClipboard(text: string) {
   if (!text) return
   try {
     await navigator.clipboard.writeText(text)
-    alert('复制成功！')
+    alert('[OK] COPIED')
   } catch {
-    alert('复制失败，请手动选择复制。')
+    alert('[ERROR] COPY_FAILED')
   }
 }
 
@@ -298,72 +298,72 @@ function decodeJwt() {
 
 <template>
   <!-- Preview Mode -->
-  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 font-serif py-3 text-center text-[#ebdcb9] w-full">
-    <div class="text-[11px] font-bold text-gold">天工度量衡</div>
-    <div class="text-[9px] opacity-75 mt-1 leading-relaxed max-w-[220px]">
-      集成日常开发和办公常用的时间戳双向互转、JSON 文本格式美化压缩、以及标准 Base64 编解码效率工具。
+  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 font-mono py-3 text-center text-neutral-300 w-full">
+    <div class="text-[11px] font-bold text-accent tracking-widest uppercase">DevTools</div>
+    <div class="text-[9px] text-neutral-500 mt-1 leading-relaxed max-w-[220px]">
+      Timestamp, JSON, Base64, URL, Hash, Radix, JWT — developer utilities in one terminal.
     </div>
   </div>
 
   <!-- Full Mode -->
-  <div v-else class="w-full flex flex-col gap-4 font-bold select-none font-serif text-cream">
+  <div v-else class="w-full flex flex-col gap-4 font-mono select-none text-neutral-300">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-[#d4af37]/20 pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-[#ebdcb9]">🛠️ 天工开物效率中心</span>
+    <div class="flex items-center justify-between border-b border-line pb-2.5">
+      <span class="text-xs uppercase tracking-widest text-accent">[ DEVTOOLS ]</span>
     </div>
 
     <!-- Layout: Sidebar and Main panels -->
     <div class="flex flex-col lg:flex-row gap-5 min-h-[420px]">
       <!-- Left Sidebar Tabs Menu -->
-      <div class="w-full lg:w-[160px] shrink-0 flex flex-row lg:flex-col border-b lg:border-b-0 lg:border-r border-[#d4af37]/20 pb-3 lg:pb-0 lg:pr-3.5 gap-1 overflow-x-auto lg:overflow-x-visible">
+      <div class="w-full lg:w-[160px] shrink-0 flex flex-row lg:flex-col border-b lg:border-b-0 lg:border-r border-line pb-3 lg:pb-0 lg:pr-3.5 gap-1 overflow-x-auto lg:overflow-x-visible">
         <button 
           @click="activeTab = 'timestamp'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'timestamp' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'timestamp' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          ⏰ 时间戳转换
+          TIMESTAMP
         </button>
         <button 
           @click="activeTab = 'json'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'json' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'json' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          📦 JSON 格式化
+          JSON
         </button>
         <button 
           @click="activeTab = 'base64'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'base64' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'base64' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          🔐 Base64 编解码
+          BASE64
         </button>
         <button 
           @click="activeTab = 'url'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'url' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'url' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          🌐 URL 编解码
+          URL
         </button>
         <button 
           @click="activeTab = 'hash'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'hash' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'hash' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          🔑 密码哈希计算
+          HASH
         </button>
         <button 
           @click="activeTab = 'radix'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'radix' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'radix' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          📐 进制联动互转
+          RADIX
         </button>
         <button 
           @click="activeTab = 'jwt'"
-          class="w-auto lg:w-full text-left px-3 py-2 rounded text-[11px] md:text-xs cursor-pointer transition-all font-bold whitespace-nowrap"
-          :class="[activeTab === 'jwt' ? 'bg-[#6e5020] text-[#f5f2eb] shadow-md border border-[#d4af37]/30' : 'text-[#ebdcb9]/60 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+          class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
+          :class="[activeTab === 'jwt' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          📜 JWT 密钥解析
+          JWT
         </button>
       </div>
 
@@ -372,60 +372,60 @@ function decodeJwt() {
 
       <!-- TAB 1: Timestamp Converter -->
       <div v-if="activeTab === 'timestamp'" class="flex flex-col gap-3 text-xs md:text-sm max-w-xl">
-        <div class="flex justify-between items-center bg-[#1a1613] p-2.5 rounded border border-[#d4af37]/20 text-xs">
-          <span class="text-parchment/60">当前时间戳 (秒级):</span>
+        <div class="flex justify-between items-center bg-surface p-2.5 rounded-sm border border-line text-xs">
+          <span class="text-neutral-500 uppercase tracking-widest text-[10px]">TIMESTAMP (SEC)</span>
           <span 
             @click="copyToClipboard(String(currentTimestamp))"
-            class="font-mono text-gold hover:underline cursor-pointer"
-            title="点击复制"
+            class="font-mono text-accent hover:underline cursor-pointer"
+            title="Click to copy"
           >
-            {{ currentTimestamp }} 📋
+            {{ currentTimestamp }}
           </span>
         </div>
 
         <!-- TS to Date -->
-        <div class="flex flex-col gap-1.5 border border-[#d4af37]/20 p-3 rounded bg-[#120e0c]/60">
-          <span class="text-xs text-[#ebdcb9]/70">秒/毫秒时间戳 ➔ 易读日期时间</span>
+        <div class="flex flex-col gap-1.5 border border-line p-3 rounded-sm bg-base">
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">TIMESTAMP → DATE</span>
           <div class="flex gap-2">
             <input 
               v-model="tsInput" 
               type="text" 
-              placeholder="时间戳..." 
-              class="flex-1 border border-[#d4af37]/35 px-2.5 py-1.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono outline-none"
+              placeholder="timestamp..." 
+              class="flex-1 border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
             <button 
               @click="convertTsToDate" 
-              class="bg-[#6e5020] hover:bg-gold hover:text-black text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+              class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
             >
-              转换
+              CONVERT
             </button>
           </div>
-          <div v-if="dateOutput" class="flex justify-between items-center text-xs mt-1.5 font-mono text-[#f5f2eb] bg-black/45 p-2 rounded">
+          <div v-if="dateOutput" class="flex justify-between items-center text-xs mt-1.5 font-mono text-neutral-300 bg-surface p-2 rounded-sm border border-border-dim">
             <span class="truncate">{{ dateOutput }}</span>
-            <button @click="copyToClipboard(dateOutput)" class="text-gold text-xs cursor-pointer hover:underline pl-2 shrink-0">复制</button>
+            <button @click="copyToClipboard(dateOutput)" class="text-accent text-xs cursor-pointer hover:underline pl-2 shrink-0">COPY</button>
           </div>
         </div>
 
         <!-- Date to TS -->
-        <div class="flex flex-col gap-1.5 border border-[#d4af37]/20 p-3 rounded bg-[#120e0c]/60">
-          <span class="text-xs text-[#ebdcb9]/70">标准时间 ➔ 秒时间戳</span>
+        <div class="flex flex-col gap-1.5 border border-line p-3 rounded-sm bg-base">
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">DATE → TIMESTAMP</span>
           <div class="flex gap-2">
             <input 
               v-model="dateInput" 
               type="text" 
               placeholder="YYYY-MM-DD HH:mm:ss" 
-              class="flex-1 border border-[#d4af37]/35 px-2.5 py-1.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono outline-none"
+              class="flex-1 border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
             <button 
               @click="convertDateToTs" 
-              class="bg-[#6e5020] hover:bg-gold hover:text-black text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+              class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
             >
-              转换
+              CONVERT
             </button>
           </div>
-          <div v-if="tsOutput" class="flex justify-between items-center text-xs mt-1.5 font-mono text-[#f5f2eb] bg-black/45 p-2 rounded">
+          <div v-if="tsOutput" class="flex justify-between items-center text-xs mt-1.5 font-mono text-neutral-300 bg-surface p-2 rounded-sm border border-border-dim">
             <span class="truncate">{{ tsOutput }}</span>
-            <button @click="copyToClipboard(tsOutput)" class="text-gold text-xs cursor-pointer hover:underline pl-2 shrink-0">复制</button>
+            <button @click="copyToClipboard(tsOutput)" class="text-accent text-xs cursor-pointer hover:underline pl-2 shrink-0">COPY</button>
           </div>
         </div>
       </div>
@@ -435,48 +435,48 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Left: Input -->
           <div class="flex flex-col gap-1.5">
-            <span class="text-xs text-[#ebdcb9]/70">输入 JSON 密文</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT JSON</span>
             <textarea 
               v-model="jsonInput" 
-              placeholder="在此粘贴或输入待换算格式的 JSON 文本..." 
-              class="w-full h-[220px] border border-[#d4af37]/35 p-2.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono text-xs outline-none focus:border-[#d4af37]"
+              placeholder="Paste JSON here..." 
+              class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent"
             ></textarea>
           </div>
           <!-- Right: Output -->
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-green-400">换算输出结果:</span>
-              <button v-if="jsonOutput" @click="copyToClipboard(jsonOutput)" class="text-gold hover:underline cursor-pointer">复制结果 📋</button>
+              <span class="text-accent uppercase tracking-widest text-[10px]">OUTPUT</span>
+              <button v-if="jsonOutput" @click="copyToClipboard(jsonOutput)" class="text-accent hover:underline cursor-pointer">COPY</button>
             </div>
             <textarea 
               readonly
               :value="jsonOutput" 
-              placeholder="格式化或压缩后的结果将在此显现..."
-              class="w-full h-[220px] border border-[#d4af37]/20 p-2.5 rounded bg-black/45 text-green-300 font-mono text-xs outline-none"
+              placeholder="Formatted or minified output..."
+              class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none"
             ></textarea>
           </div>
         </div>
         <div class="flex gap-2 justify-end">
           <button 
             @click="formatJson" 
-            class="bg-[#6e5020] hover:bg-gold hover:text-black text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+            class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            美化格式
+            PRETTY
           </button>
           <button 
             @click="minifyJson" 
-            class="bg-[#2b2b2e] hover:bg-btn-hover text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+            class="bg-surface hover:bg-base text-neutral-300 px-4 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            压缩代码
+            MINIFY
           </button>
           <button 
             @click="jsonInput = ''; jsonOutput = ''; jsonError = ''" 
-            class="px-4 bg-transparent text-status-bad py-1.5 rounded border border-status-bad/40 cursor-pointer text-xs hover:bg-status-bad/10 transition-colors"
+            class="px-4 bg-transparent text-neutral-600 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs hover:bg-surface transition-none font-bold uppercase tracking-widest"
           >
-            清空
+            CLEAR
           </button>
         </div>
-        <div v-if="jsonError" class="text-status-bad text-xs font-mono bg-status-bad/10 p-2 border border-status-bad/30 rounded break-all">
+        <div v-if="jsonError" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
           {{ jsonError }}
         </div>
       </div>
@@ -486,48 +486,48 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Left: Input -->
           <div class="flex flex-col gap-1.5">
-            <span class="text-xs text-[#ebdcb9]/70">输入文本或 Base64</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT TEXT OR BASE64</span>
             <textarea 
               v-model="b64Input" 
-              placeholder="输入普通文本或待解密的 Base64 密文..." 
-              class="w-full h-[220px] border border-[#d4af37]/35 p-2.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono text-xs outline-none focus:border-[#d4af37]"
+              placeholder="Enter text or Base64 string..." 
+              class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent"
             ></textarea>
           </div>
           <!-- Right: Output -->
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-green-400">编解码输出结果:</span>
-              <button v-if="b64Output" @click="copyToClipboard(b64Output)" class="text-gold hover:underline cursor-pointer">复制结果 📋</button>
+              <span class="text-accent uppercase tracking-widest text-[10px]">OUTPUT</span>
+              <button v-if="b64Output" @click="copyToClipboard(b64Output)" class="text-accent hover:underline cursor-pointer">COPY</button>
             </div>
             <textarea 
               readonly
               :value="b64Output" 
-              placeholder="Base64 编解码结果将在此显现..."
-              class="w-full h-[220px] border border-[#d4af37]/20 p-2.5 rounded bg-black/45 text-green-300 font-mono text-xs outline-none"
+              placeholder="Base64 encode/decode result..."
+              class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none"
             ></textarea>
           </div>
         </div>
         <div class="flex gap-2 justify-end">
           <button 
             @click="encodeBase64" 
-            class="bg-[#6e5020] hover:bg-gold hover:text-black text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+            class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            编码 (Encode)
+            ENCODE
           </button>
           <button 
             @click="decodeBase64" 
-            class="bg-[#2b2b2e] hover:bg-btn-hover text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+            class="bg-surface hover:bg-base text-neutral-300 px-4 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            解码 (Decode)
+            DECODE
           </button>
           <button 
             @click="b64Input = ''; b64Output = ''; b64Error = ''" 
-            class="px-4 bg-transparent text-status-bad py-1.5 rounded border border-status-bad/40 cursor-pointer text-xs hover:bg-status-bad/10 transition-colors"
+            class="px-4 bg-transparent text-neutral-600 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs hover:bg-surface transition-none font-bold uppercase tracking-widest"
           >
-            清空
+            CLEAR
           </button>
         </div>
-        <div v-if="b64Error" class="text-status-bad text-xs font-mono bg-status-bad/10 p-2 border border-status-bad/30 rounded break-all">
+        <div v-if="b64Error" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
           {{ b64Error }}
         </div>
       </div>
@@ -537,48 +537,48 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Left: Input -->
           <div class="flex flex-col gap-1.5">
-            <span class="text-xs text-[#ebdcb9]/70">输入待转换的 URL 文本</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT URL TEXT</span>
             <textarea 
               v-model="urlInput" 
-              placeholder="在此粘贴或输入需要 URL 编码或解码的字符串..." 
-              class="w-full h-[220px] border border-[#d4af37]/35 p-2.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono text-xs outline-none focus:border-[#d4af37]"
+              placeholder="Paste URL or string to encode/decode..." 
+              class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent"
             ></textarea>
           </div>
           <!-- Right: Output -->
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-green-400">换算输出结果:</span>
-              <button v-if="urlOutput" @click="copyToClipboard(urlOutput)" class="text-gold hover:underline cursor-pointer">复制结果 📋</button>
+              <span class="text-accent uppercase tracking-widest text-[10px]">OUTPUT</span>
+              <button v-if="urlOutput" @click="copyToClipboard(urlOutput)" class="text-accent hover:underline cursor-pointer">COPY</button>
             </div>
             <textarea 
               readonly
               :value="urlOutput" 
-              placeholder="URL 编解码结果将在此显现..."
-              class="w-full h-[220px] border border-[#d4af37]/20 p-2.5 rounded bg-black/45 text-green-300 font-mono text-xs outline-none"
+              placeholder="URL encode/decode result..."
+              class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none"
             ></textarea>
           </div>
         </div>
         <div class="flex gap-2 justify-end">
           <button 
             @click="encodeUrl" 
-            class="bg-[#6e5020] hover:bg-gold hover:text-black text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+            class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            URL 编码 (Encode)
+            ENCODE
           </button>
           <button 
             @click="decodeUrl" 
-            class="bg-[#2b2b2e] hover:bg-btn-hover text-white px-4 py-1.5 rounded border border-[#d4af37]/45 cursor-pointer text-xs transition-colors"
+            class="bg-surface hover:bg-base text-neutral-300 px-4 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            URL 解码 (Decode)
+            DECODE
           </button>
           <button 
             @click="urlInput = ''; urlOutput = ''; urlError = ''" 
-            class="px-4 bg-transparent text-status-bad py-1.5 rounded border border-status-bad/40 cursor-pointer text-xs hover:bg-status-bad/10 transition-colors"
+            class="px-4 bg-transparent text-neutral-600 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs hover:bg-surface transition-none font-bold uppercase tracking-widest"
           >
-            清空
+            CLEAR
           </button>
         </div>
-        <div v-if="urlError" class="text-status-bad text-xs font-mono bg-status-bad/10 p-2 border border-status-bad/30 rounded break-all">
+        <div v-if="urlError" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
           {{ urlError }}
         </div>
       </div>
@@ -586,35 +586,35 @@ function decodeJwt() {
       <!-- TAB 5: Hash Converter -->
       <div v-if="activeTab === 'hash'" class="flex flex-col gap-3 text-xs md:text-sm">
         <div class="flex flex-col gap-1.5">
-          <span class="text-xs text-[#ebdcb9]/70">输入文本</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT TEXT</span>
           <textarea 
             v-model="hashInput" 
             @input="calculateHash"
-            placeholder="在此输入文本，哈希值将实时联动计算..." 
-            class="w-full h-[80px] border border-[#d4af37]/35 p-2.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono text-xs outline-none focus:border-[#d4af37] resize-y"
+            placeholder="Enter text for real-time hash calculation..." 
+            class="w-full h-[80px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent resize-y"
           ></textarea>
         </div>
 
         <div class="flex flex-col gap-2.5 mt-1">
           <!-- SHA-256 -->
-          <div class="border border-[#d4af37]/20 p-2.5 rounded bg-[#120e0c]/60 flex flex-col gap-1">
+          <div class="border border-line p-2.5 rounded-sm bg-base flex flex-col gap-1">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-[#ebdcb9]/75 font-mono text-[10px]">SHA-256</span>
-              <button v-if="sha256Output" @click="copyToClipboard(sha256Output)" class="text-gold hover:underline text-[10px] cursor-pointer">复制 📋</button>
+              <span class="text-neutral-400 font-mono text-[10px] uppercase tracking-widest">SHA-256</span>
+              <button v-if="sha256Output" @click="copyToClipboard(sha256Output)" class="text-accent hover:underline text-[10px] cursor-pointer">COPY</button>
             </div>
-            <div class="font-mono text-green-300 text-[10px] bg-black/45 p-1.5 rounded break-all select-all min-h-[26px]">
-              {{ sha256Output || '等待输入...' }}
+            <div class="font-mono text-neutral-300 text-[10px] bg-surface p-1.5 rounded-sm border border-border-dim break-all select-all min-h-[26px]">
+              {{ sha256Output || '---' }}
             </div>
           </div>
 
           <!-- SHA-1 -->
-          <div class="border border-[#d4af37]/20 p-2.5 rounded bg-[#120e0c]/60 flex flex-col gap-1">
+          <div class="border border-line p-2.5 rounded-sm bg-base flex flex-col gap-1">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-[#ebdcb9]/75 font-mono text-[10px]">SHA-1</span>
-              <button v-if="sha1Output" @click="copyToClipboard(sha1Output)" class="text-gold hover:underline text-[10px] cursor-pointer">复制 📋</button>
+              <span class="text-neutral-400 font-mono text-[10px] uppercase tracking-widest">SHA-1</span>
+              <button v-if="sha1Output" @click="copyToClipboard(sha1Output)" class="text-accent hover:underline text-[10px] cursor-pointer">COPY</button>
             </div>
-            <div class="font-mono text-green-300 text-[10px] bg-black/45 p-1.5 rounded break-all select-all min-h-[26px]">
-              {{ sha1Output || '等待输入...' }}
+            <div class="font-mono text-neutral-300 text-[10px] bg-surface p-1.5 rounded-sm border border-border-dim break-all select-all min-h-[26px]">
+              {{ sha1Output || '---' }}
             </div>
           </div>
         </div>
@@ -622,57 +622,57 @@ function decodeJwt() {
 
       <!-- TAB 6: Radix Converter -->
       <div v-if="activeTab === 'radix'" class="flex flex-col gap-4 text-xs md:text-sm max-w-xl">
-        <div class="border-b border-[#d4af37]/20 pb-1 flex justify-between items-center">
-          <span class="text-xs text-[#ebdcb9]/70">程序员进制互转（任意输入，其余实时联动换算）</span>
-          <button @click="clearRadix" class="text-status-bad text-[10px] hover:underline cursor-pointer">一键清空</button>
+        <div class="border-b border-line pb-1 flex justify-between items-center">
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">RADIX CONVERTER</span>
+          <button @click="clearRadix" class="text-neutral-600 text-[10px] hover:underline cursor-pointer uppercase tracking-widest">CLEAR ALL</button>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <!-- DEC -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-[#ebdcb9]/65 font-mono text-[10px]">十进制 (Decimal / 10)</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">DECIMAL / 10</label>
             <input 
               :value="radixDec"
               @input="updateFromDec(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Dec 数值..." 
-              class="border border-[#d4af37]/35 px-2.5 py-1.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono outline-none"
+              placeholder="Dec value..." 
+              class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
           </div>
 
           <!-- HEX -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-[#ebdcb9]/65 font-mono text-[10px]">十六进制 (Hexadecimal / 16)</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">HEXADECIMAL / 16</label>
             <input 
               :value="radixHex"
               @input="updateFromHex(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Hex 数值..." 
-              class="border border-[#d4af37]/35 px-2.5 py-1.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono outline-none text-gold font-bold"
+              placeholder="Hex value..." 
+              class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-accent font-mono outline-none focus:border-accent font-bold"
             />
           </div>
 
           <!-- BIN -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-[#ebdcb9]/65 font-mono text-[10px]">二进制 (Binary / 2)</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">BINARY / 2</label>
             <input 
               :value="radixBin"
               @input="updateFromBin(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Bin 数值..." 
-              class="border border-[#d4af37]/35 px-2.5 py-1.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono outline-none text-green-300"
+              placeholder="Bin value..." 
+              class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
           </div>
 
           <!-- OCT -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-[#ebdcb9]/65 font-mono text-[10px]">八进制 (Octal / 8)</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">OCTAL / 8</label>
             <input 
               :value="radixOct"
               @input="updateFromOct(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Oct 数值..." 
-              class="border border-[#d4af37]/35 px-2.5 py-1.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono outline-none"
+              placeholder="Oct value..." 
+              class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
           </div>
         </div>
@@ -683,44 +683,44 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <!-- Left 2 columns: Input -->
           <div class="md:col-span-2 flex flex-col gap-1.5">
-            <span class="text-xs text-[#ebdcb9]/70">输入 JWT Token 字符串</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT JWT TOKEN</span>
             <textarea 
               v-model="jwtInput" 
               @input="decodeJwt"
-              placeholder="在此粘贴 JWT Token 秘钥（Header.Payload.Signature）..." 
-              class="w-full h-[240px] border border-[#d4af37]/35 p-2.5 rounded bg-[#1a1613] text-[#f5f2eb] font-mono text-[10px] outline-none focus:border-[#d4af37] break-all"
+              placeholder="Paste JWT token (Header.Payload.Signature)..." 
+              class="w-full h-[240px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-[10px] outline-none focus:border-accent break-all"
             ></textarea>
           </div>
           <!-- Right 3 columns: Decoded results -->
           <div class="md:col-span-3 flex flex-col gap-3">
             <div class="flex-1 flex flex-col gap-1">
               <div class="flex justify-between items-center text-xs">
-                <span class="text-red-400 font-bold text-[10px] tracking-wider uppercase">Header (头)</span>
-                <button v-if="jwtHeader" @click="copyToClipboard(jwtHeader)" class="text-gold text-[10px] hover:underline cursor-pointer">复制 📋</button>
+                <span class="text-accent font-bold text-[10px] tracking-widest uppercase">HEADER</span>
+                <button v-if="jwtHeader" @click="copyToClipboard(jwtHeader)" class="text-accent text-[10px] hover:underline cursor-pointer">COPY</button>
               </div>
               <textarea 
                 readonly
                 :value="jwtHeader" 
-                placeholder="Header 解码后的 JSON 数据..."
-                class="w-full h-[90px] border border-red-900/30 p-2 rounded bg-black/45 text-red-300 font-mono text-[10px] outline-none"
+                placeholder="Decoded header JSON..."
+                class="w-full h-[90px] border border-border-dim p-2 rounded-sm bg-surface text-neutral-300 font-mono text-[10px] outline-none"
               ></textarea>
             </div>
             
             <div class="flex-1 flex flex-col gap-1">
               <div class="flex justify-between items-center text-xs">
-                <span class="text-green-400 font-bold text-[10px] tracking-wider uppercase">Payload (载荷 Claims)</span>
-                <button v-if="jwtPayload" @click="copyToClipboard(jwtPayload)" class="text-gold text-[10px] hover:underline cursor-pointer">复制 📋</button>
+                <span class="text-accent font-bold text-[10px] tracking-widest uppercase">PAYLOAD</span>
+                <button v-if="jwtPayload" @click="copyToClipboard(jwtPayload)" class="text-accent text-[10px] hover:underline cursor-pointer">COPY</button>
               </div>
               <textarea 
                 readonly
                 :value="jwtPayload" 
-                placeholder="Payload Claims 解码后的 JSON 数据..."
-                class="w-full h-[120px] border border-green-900/30 p-2 rounded bg-black/45 text-green-300 font-mono text-[10px] outline-none"
+                placeholder="Decoded payload JSON..."
+                class="w-full h-[120px] border border-border-dim p-2 rounded-sm bg-surface text-neutral-300 font-mono text-[10px] outline-none"
               ></textarea>
             </div>
           </div>
         </div>
-        <div v-if="jwtError" class="text-status-bad text-xs font-mono bg-status-bad/10 p-2 border border-status-bad/30 rounded break-all">
+        <div v-if="jwtError" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
           {{ jwtError }}
         </div>
       </div>

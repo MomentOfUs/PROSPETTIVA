@@ -56,8 +56,8 @@ const DEFAULT_CONFIG: Config = {
   openaiKey: '',
   openaiBase: 'https://api.deepseek.com',
   openaiModel: 'deepseek-chat',
-  gridRows: 3,
-  gridCols: 5
+  gridRows: 5,
+  gridCols: 10
 }
 
 // 旧版颜色兼容映射（pastel → 高对比油画色调）
@@ -113,6 +113,15 @@ export function useNavData() {
           }
           return item
         })
+
+	        // Sync widget item titles with Registry
+	        items.value.forEach(item => {
+	          if (item.url && item.url.startsWith('#widget:')) {
+	            const widgetId = item.url.replace('#widget:', '')
+	            const def = availableWidgets.find(w => w.id === widgetId)
+	            if (def) item.title = def.name
+	          }
+	        })
 
         const parsedConfig = JSON.parse(storedConfig)
         if (!parsedConfig.widgets) {
@@ -286,6 +295,11 @@ export function useNavData() {
           color: '#6e5020',
           size: 'normal'
         })
+	      } else if (isEnabled && itemIdx !== -1) {
+	        // Sync title with Registry
+	        if (items.value[itemIdx].title !== w.name) {
+	          items.value[itemIdx].title = w.name
+	        }
       } else if (!isEnabled && itemIdx !== -1) {
         items.value.splice(itemIdx, 1)
       }

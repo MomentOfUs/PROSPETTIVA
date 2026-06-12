@@ -123,10 +123,10 @@ function createNewSession() {
 
 function deleteSession(id: string) {
   if (sessions.value.length <= 1) {
-    alert('必须保留至少一个探讨会话。')
+    alert('[ERROR] MIN_ONE_CHAT_REQUIRED')
     return
   }
-  if (confirm('确认要抹去这轮思辨探讨的轨迹吗？')) {
+  if (confirm('[ DESTROY ] ?')) {
     sessions.value = sessions.value.filter(s => s.id !== id)
     if (activeSessionId.value === id) {
       activeSessionId.value = sessions.value[0].id
@@ -214,7 +214,7 @@ async function sendMessage() {
 
 <template>
   <!-- Preview Mode -->
-  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 font-serif py-3 text-center text-[#ebdcb9] w-full">
+  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 font-mono py-3 text-center text-neutral-500 w-full">
     <div class="text-[11px] font-bold text-gold">哲人思辨录</div>
     <div class="text-[9px] opacity-75 mt-1 leading-relaxed max-w-[220px]">
       💬 哲人对话姬已就绪，点击网格卡片即可开启网页检索与智能思辨。
@@ -222,11 +222,11 @@ async function sendMessage() {
   </div>
 
   <!-- Full Mode -->
-  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-serif text-cream">
+  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-mono text-cream">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-[#d4af37]/20 pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-[#ebdcb9]">🖋️ 哲人思辨效率面板</span>
-      <span class="text-[10px] bg-[#120e0c] border border-[#d4af37]/30 text-[#d4af37] px-2.5 py-0.5 rounded font-serif">
+    <div class="flex items-center justify-between border-b border-line pb-2.5">
+      <span class="text-xs uppercase tracking-widest text-neutral-500">[ CHAT ]</span>
+      <span class="text-[10px] bg-base border border-line text-accent px-2.5 py-0.5 rounded font-mono">
         {{ apiKey ? `DeepSeek: ${apiModel}` : '免费思辨路线' }}
       </span>
     </div>
@@ -237,7 +237,7 @@ async function sendMessage() {
       <div class="w-full lg:w-[200px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-[#d4af37]/20 pb-3 lg:pb-0 lg:pr-3.5 gap-2">
         <button 
           @click="createNewSession"
-          class="w-full text-center border border-[#d4af37]/45 text-[#d4af37] hover:bg-[#d4af37]/10 py-1.5 rounded text-xs cursor-pointer font-bold transition-all"
+          class="w-full text-center border border-[#d4af37]/45 text-accent hover:bg-[#d4af37]/10 py-1.5 rounded text-xs cursor-pointer font-bold transition-all"
         >
           ➕ 开启新论题
         </button>
@@ -248,12 +248,12 @@ async function sendMessage() {
             :key="sess.id"
             @click="activeSessionId = sess.id; scrollToBottom()"
             class="flex items-center justify-between w-[130px] lg:w-full px-2.5 py-1.8 rounded border text-[11px] cursor-pointer transition-all shrink-0"
-            :class="[activeSessionId === sess.id ? 'bg-[#6e5020]/45 border-[#d4af37] text-gold' : 'border-[#d4af37]/15 text-[#ebdcb9]/50 hover:bg-[#1a1613] hover:text-[#ebdcb9]']"
+            :class="[activeSessionId === sess.id ? 'bg-[#6e5020]/45 border-[#d4af37] text-gold' : 'border-[#d4af37]/15 text-neutral-500/50 hover:bg-[#1a1613] hover:text-neutral-500']"
           >
             <span class="truncate select-none max-w-[95px] lg:max-w-[130px] font-bold">{{ sess.title }}</span>
             <button 
               @click.stop="deleteSession(sess.id)"
-              class="text-[#ebdcb9]/40 hover:text-status-bad text-[9px] cursor-pointer pl-1 bg-transparent border-0 outline-none"
+              class="text-neutral-500/40 hover:text-status-bad text-[9px] cursor-pointer pl-1 bg-transparent border-0 outline-none"
               title="抹去探讨"
             >
               ×
@@ -267,7 +267,7 @@ async function sendMessage() {
         <!-- Chat log container -->
         <div 
           ref="chatContainer"
-          class="bg-[#120e0c] border border-[#d4af37]/25 p-3 rounded h-[380px] lg:h-[420px] overflow-y-auto flex flex-col gap-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] font-serif"
+          class="bg-base border border-[#d4af37]/25 p-3 rounded h-[380px] lg:h-[420px] overflow-y-auto flex flex-col gap-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] font-mono"
         >
           <div 
             v-for="(msg, idx) in activeSession.messages" 
@@ -275,8 +275,8 @@ async function sendMessage() {
             class="flex flex-col text-xs md:text-sm mb-1"
           >
             <span 
-              class="font-semibold mb-1 select-none font-serif tracking-widest text-[9px] md:text-xs"
-              :class="[msg.role === 'user' ? 'text-[#d4af37]/75 text-right' : 'text-[#ebdcb9]/60']"
+              class="font-semibold mb-1 select-none font-mono tracking-widest text-[9px] md:text-xs"
+              :class="[msg.role === 'user' ? 'text-accent/75 text-right' : 'text-neutral-500/60']"
             >
               {{ msg.role === 'user' ? '// 探讨提出者 Q.' : '// 贤者释义 A.' }}
             </span>
@@ -284,30 +284,30 @@ async function sendMessage() {
               class="p-3 rounded-lg border border-[#d4af37]/15 whitespace-pre-wrap select-text leading-relaxed text-[#f5f2eb] max-w-[85%] sm:max-w-[80%]"
               :class="[
                 msg.role === 'user' 
-                  ? 'bg-chat-user self-end rounded-tr-none border-[#d4af37]/30' 
+                  ? 'bg-chat-user self-end rounded-tr-none border-line' 
                   : 'bg-chat-ai self-start rounded-tl-none border-gold/10'
               ]"
             >
               {{ msg.content }}
             </div>
           </div>
-          <div v-if="loading" class="text-xs text-[#d4af37]/60 animate-pulse font-serif italic py-1">
+          <div v-if="loading" class="text-xs text-accent/60 animate-pulse font-mono italic py-1">
             贤者正在计算万物的秩序...
           </div>
         </div>
 
         <!-- Input group -->
-        <div class="flex border border-[#d4af37]/45 rounded bg-[#120e0c] overflow-hidden text-xs md:text-sm">
+        <div class="flex border border-[#d4af37]/45 rounded bg-base overflow-hidden text-xs md:text-sm">
           <input 
             v-model="inputMsg" 
             type="text" 
             @keydown.enter="sendMessage"
             placeholder="与贤者思辨天理..." 
-            class="w-full px-3 py-2.5 outline-none text-[#f5f2eb] bg-transparent placeholder-placeholder font-serif"
+            class="w-full px-3 py-2.5 outline-none text-[#f5f2eb] bg-transparent placeholder-placeholder font-mono"
           />
           <button 
             @click="sendMessage"
-            class="bg-btn-base border-l border-[#d4af37]/45 text-[#ebdcb9] hover:text-[#d4af37] hover:bg-btn-hover px-5 font-bold flex items-center justify-center cursor-pointer transition-colors font-serif"
+            class="bg-btn-base border-l border-[#d4af37]/45 text-neutral-500 hover:text-accent hover:bg-btn-hover px-5 font-bold flex items-center justify-center cursor-pointer transition-colors font-mono"
           >
             思辨
           </button>

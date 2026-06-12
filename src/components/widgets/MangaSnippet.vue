@@ -17,7 +17,7 @@ interface Snippet {
 }
 
 const snippets = ref<Snippet[]>([])
-const activeCategory = ref('全部')
+const activeCategory = ref('ALL')
 const copiedId = ref<string | null>(null)
 const isEditMode = ref(false)
 const showAddForm = ref(false)
@@ -51,7 +51,7 @@ function loadSnippets() {
       { id: 's1', title: 'Git 提交全流程', content: 'git add . && git commit -m "update" && git push', category: '开发', color: '#18283b' },
       { id: 's2', title: '周报汇报模板', content: '【本周进展】\n1. \n2. \n【下周计划】\n1. \n2. \n【需协调事项】\n无', category: '办公', color: '#6e5020' },
       { id: 's3', title: '查看本地 IP 地址', content: 'curl ipinfo.io', category: '开发', color: '#152e24' },
-      { id: 's4', title: '每日打卡回复', content: '今日已完成打卡，各项业务指标运行良好！', category: '通用', color: '#4a161b' }
+      { id: 's4', title: '每日打卡回复', content: '今日已[ OK ]打卡，各项业务指标运行良好！', category: '通用', color: '#4a161b' }
     ]
   }
 }
@@ -73,7 +73,7 @@ watch(snippets, (newVal) => {
 // Categories computed
 const categories = computed(() => {
   const cats = new Set<string>()
-  cats.add('全部')
+  cats.add('ALL')
   snippets.value.forEach(s => {
     if (s.category) cats.add(s.category)
   })
@@ -81,7 +81,7 @@ const categories = computed(() => {
 })
 
 const filteredSnippets = computed(() => {
-  if (activeCategory.value === '全部') {
+  if (activeCategory.value === 'ALL') {
     return snippets.value
   }
   return snippets.value.filter(s => s.category === activeCategory.value)
@@ -99,14 +99,14 @@ async function copySnippet(snippet: Snippet) {
       }
     }, 1500)
   } catch (err) {
-    alert('复制失败，请检查浏览器剪贴板权限！')
+    alert('[ERROR] CLIPBOARD_ACCESS_DENIED')
   }
 }
 
 // Add action
 function addSnippet() {
   if (!newTitle.value.trim() || !newContent.value.trim()) {
-    alert('标题与内容不能为空！')
+    alert('[ERROR] TITLE_AND_CONTENT_REQUIRED')
     return
   }
 
@@ -135,7 +135,7 @@ function addSnippet() {
 
 // Delete action
 function deleteSnippet(id: string) {
-  if (confirm('确认抹去这条咒语吗？')) {
+  if (confirm('[ DESTROY ] ?')) {
     snippets.value = snippets.value.filter(s => s.id !== id)
   }
 }
@@ -143,94 +143,94 @@ function deleteSnippet(id: string) {
 
 <template>
   <!-- Preview Mode -->
-  <div v-if="preview" class="flex flex-col gap-1 max-h-[120px] overflow-y-auto pr-1 text-[10px] w-full text-left font-serif select-none">
+  <div v-if="preview" class="flex flex-col gap-1 max-h-[120px] overflow-y-auto pr-1 text-[10px] w-full text-left font-mono select-none">
     <div 
       v-for="snip in snippets" 
       :key="snip.id"
-      class="relative border border-[#d4af37]/20 rounded p-1.5 text-left bg-black/20"
+      class="relative border border-border-dim p-1.5 text-left bg-base"
     >
-      <span class="text-[9px] font-bold text-parchment">{{ snip.title }}</span>
-      <p class="text-[8px] font-mono text-parchment/50 truncate mt-0.5">{{ snip.content }}</p>
+      <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">{{ snip.title }}</span>
+      <p class="text-[8px] font-mono text-neutral-400 truncate mt-0.5">{{ snip.content }}</p>
     </div>
-    <div v-if="snippets.length === 0" class="text-center text-[9px] text-gold/40 py-2 italic">
-      暂无咒语。
+    <div v-if="snippets.length === 0" class="text-center text-[9px] text-neutral-600 py-2">
+      // EMPTY //
     </div>
   </div>
 
   <!-- Full Mode -->
-  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-serif text-cream">
+  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-mono text-neutral-300">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-[#d4af37]/20 pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-[#ebdcb9]">📜 秘法咒语快传</span>
+    <div class="flex items-center justify-between border-b border-line pb-2.5">
+      <span class="text-xs uppercase tracking-widest text-accent">[ SNIPPET ]</span>
       <div class="flex items-center gap-1.5">
         <button 
           @click="isEditMode = !isEditMode" 
-          class="text-xs px-2.5 py-0.5 border rounded bg-transparent transition-all cursor-pointer"
-          :class="[isEditMode ? 'bg-status-bad border-status-bad text-white' : 'border-[#d4af37]/45 text-gold hover:text-gold/80']"
-          title="管理咒语"
+          class="text-xs px-2.5 py-0.5 border border-border-dim bg-base text-neutral-400 hover:text-black transition-none cursor-pointer"
+          :class="[isEditMode ? 'bg-accent border-accent text-base' : '']"
+          title="[ MANAGEMENT ]"
         >
-          {{ isEditMode ? '完成' : '编辑' }}
+          {{ isEditMode ? '[ OK ]' : 'EDIT' }}
         </button>
         <button 
           @click="showAddForm = !showAddForm; isEditMode = false" 
-          class="text-xs px-2.5 py-0.5 border border-[#d4af37]/45 text-gold hover:text-gold/80 rounded bg-transparent transition-all cursor-pointer"
-          title="添加咒语"
+          class="text-xs px-2.5 py-0.5 border border-border-dim bg-base text-neutral-400 hover:text-black transition-none cursor-pointer"
+          title="[ + MOUNT ]咒语"
         >
-          {{ showAddForm ? '取消' : '添加' }}
+          {{ showAddForm ? '[ ABORT ]' : '[ + MOUNT ]' }}
         </button>
       </div>
     </div>
 
     <div>
       <!-- Add Snippet Form -->
-      <div v-if="showAddForm" class="flex flex-col gap-3 border border-[#d4af37]/30 p-3 rounded bg-[#120e0c] text-xs md:text-sm">
+      <div v-if="showAddForm" class="flex flex-col gap-3 border border-border-dim p-3 bg-base text-xs md:text-sm">
         <div class="flex flex-col gap-1">
-          <label class="text-[#ebdcb9]/70 text-xs">咒语名称</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">NAME</label>
           <input 
             v-model="newTitle" 
             type="text" 
-            placeholder="例如: Git 一键提交" 
-            class="border border-[#d4af37]/30 p-2 rounded bg-[#1a1613] text-[#f5f2eb] outline-none focus:border-[#d4af37]"
+            placeholder="e.g. git add . && git commit" 
+            class="border border-border-dim p-2 bg-surface text-neutral-300 outline-none focus:border-accent transition-none"
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-[#ebdcb9]/70 text-xs">分类</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">CATEGORY</label>
           <input 
             v-model="newCategory" 
             type="text" 
-            placeholder="例如: 开发, 办公, 通用" 
-            class="border border-[#d4af37]/30 p-2 rounded bg-[#1a1613] text-[#f5f2eb] outline-none focus:border-[#d4af37]"
+            placeholder="e.g. DEV, OFFICE, GENERAL" 
+            class="border border-border-dim p-2 bg-surface text-neutral-300 outline-none focus:border-accent transition-none"
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-[#ebdcb9]/70 text-xs">咒语文本内容</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">PAYLOAD</label>
           <textarea 
             v-model="newContent" 
-            placeholder="点击卡片时自动复制的内容" 
+            placeholder="CLICK TO COPY" 
             rows="3"
-            class="border border-[#d4af37]/30 p-2 rounded bg-[#1a1613] text-[#f5f2eb] outline-none focus:border-[#d4af37] resize-y font-mono text-xs"
+            class="border border-border-dim p-2 bg-surface text-neutral-300 outline-none focus:border-accent transition-none resize-y font-mono text-xs"
           ></textarea>
         </div>
         <!-- Color Picker -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[#ebdcb9]/70 text-xs">卡牌底色</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">BG_COLOR</label>
           <div class="flex gap-2 flex-wrap">
             <button 
               v-for="opt in colorOptions" 
               :key="opt.value"
               @click="newColor = opt.value"
-              class="w-4.5 h-4.5 rounded-full border border-black cursor-pointer transition-transform"
+              class="w-4 h-4 border border-border-dim cursor-pointer transition-none"
               :style="{ backgroundColor: opt.value }"
-              :class="[newColor === opt.value ? 'scale-125 border-[#d4af37] ring-1 ring-[#d4af37]' : '']"
+              :class="[newColor === opt.value ? 'border-accent' : '']"
               :title="opt.label"
             ></button>
           </div>
         </div>
         <button 
           @click="addSnippet" 
-          class="bg-btn-base text-[#ebdcb9] hover:bg-btn-hover hover:text-[#d4af37] border border-[#d4af37]/45 py-2 rounded font-bold cursor-pointer transition-colors mt-1"
+          class="bg-surface text-neutral-300 hover:bg-neutral-200 hover:text-black border border-line py-2 font-bold cursor-pointer transition-none mt-1"
         >
-          设备记入
+          [ + MOUNT ]
         </button>
       </div>
 
@@ -242,8 +242,8 @@ function deleteSnippet(id: string) {
             v-for="cat in categories" 
             :key="cat"
             @click="activeCategory = cat"
-            class="text-[10px] px-2.5 py-0.5 border rounded-full transition-all shrink-0 cursor-pointer"
-            :class="[activeCategory === cat ? 'bg-[#6e5020] text-[#f5f2eb] border-[#d4af37]' : 'border-[#d4af37]/25 text-[#ebdcb9]/60 hover:text-[#ebdcb9]']"
+            class="text-[10px] px-2.5 py-0.5 border border-border-dim transition-none shrink-0 cursor-pointer"
+            :class="[activeCategory === cat ? 'bg-accent text-base border-accent' : 'text-neutral-500 hover:text-neutral-300']"
           >
             {{ cat }}
           </button>
@@ -255,15 +255,12 @@ function deleteSnippet(id: string) {
             v-for="snip in filteredSnippets" 
             :key="snip.id"
             @click="copySnippet(snip)"
-            class="relative border border-[#d4af37]/35 rounded p-2 text-left cursor-pointer transition-all hover:scale-[1.02] hover:border-[#d4af37] hover:shadow-[0_0_8px_rgba(212,175,55,0.25)] flex flex-col justify-between min-h-[46px] overflow-hidden"
+            class="relative border border-border-dim p-2 text-left cursor-pointer transition-none flex flex-col justify-between min-h-[46px] overflow-hidden"
             :style="{ backgroundColor: snip.color + 'd0' }"
-            :class="[isEditMode ? 'cursor-default' : 'active:translate-y-0.5']"
+            :class="[isEditMode ? 'cursor-default' : '']"
           >
-            <!-- Card inset border -->
-            <div class="absolute inset-0.5 border border-[#d4af37]/10 pointer-events-none rounded"></div>
-
             <div class="flex justify-between items-center gap-1">
-              <span class="text-[10px] md:text-[11px] font-bold text-[#f5f2eb] leading-tight select-none truncate">
+              <span class="text-[10px] md:text-[11px] font-bold text-neutral-300 leading-tight select-none truncate">
                 {{ snip.title }}
               </span>
               
@@ -271,25 +268,25 @@ function deleteSnippet(id: string) {
               <button 
                 v-if="isEditMode"
                 @click.stop="deleteSnippet(snip.id)"
-                class="text-status-bad hover:text-white bg-black/40 hover:bg-status-bad border border-status-bad/30 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all"
+                class="text-neutral-400 hover:text-black bg-base hover:bg-neutral-200 hover:border-neutral-200 border border-line w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-pointer transition-none"
                 title="删除此咒语"
               >
                 ×
               </button>
-              <span v-else-if="copiedId === snip.id" class="text-[8px] bg-green-950 border border-green-500 text-green-300 px-1 rounded animate-pulse scale-90 origin-right">
+              <span v-else-if="copiedId === snip.id" class="text-[8px] bg-accent text-base px-1 animate-pulse scale-90 origin-right">
                 ✓ 已吟唱
               </span>
-              <span v-else class="text-[7.5px] opacity-45 uppercase tracking-wider text-[#ebdcb9] font-mono scale-90 origin-right">
+              <span v-else class="text-[7.5px] opacity-45 uppercase tracking-wider text-neutral-600 font-mono scale-90 origin-right">
                 COPY
               </span>
             </div>
-            <p class="text-[8.5px] font-mono text-parchment/65 truncate mt-1 select-none">
+            <p class="text-[8.5px] font-mono text-neutral-400 truncate mt-1 select-none">
               {{ snip.content }}
             </p>
           </div>
           
-          <div v-if="filteredSnippets.length === 0" class="col-span-full text-center text-xs text-[#d4af37]/50 py-6 italic">
-            此分类暂无秘法咒语。
+          <div v-if="filteredSnippets.length === 0" class="col-span-full text-center text-xs text-neutral-600 py-6">
+            // EMPTY //
           </div>
         </div>
       </div>
@@ -302,23 +299,9 @@ function deleteSnippet(id: string) {
   height: 3px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.2);
-  border-radius: 2px;
+  background: #262626;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.4);
-}
-</style>
-
-<style scoped>
-.scrollbar-thin::-webkit-scrollbar {
-  height: 3px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.2);
-  border-radius: 2px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.4);
+  background: #404040;
 }
 </style>
