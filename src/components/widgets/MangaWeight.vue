@@ -474,7 +474,7 @@ function handleImport(event: Event) {
         <span class="text-sm font-semibold tracking-wider text-accent flex items-center gap-1.5">
           CHART // WEIGHT TRAJECTORY
         </span>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 flex-wrap">
           <!-- Metric switches -->
           <div class="flex border border-border-dim bg-base overflow-hidden text-[9px]">
             <button
@@ -739,7 +739,7 @@ function handleImport(event: Event) {
                 <span class="text-sm font-bold text-neutral-300">{{ bmi }}</span>
                 <span class="text-[9px] ml-1.5 font-mono" :class="bmiStatus.class">[{{ bmiStatus.label }}]</span>
               </div>
-              <span class="text-[10px] text-neutral-600 text-right max-w-[140px] leading-tight">{{ bmiStatus.desc }}</span>
+              <span class="text-[10px] text-neutral-600 text-right max-w-[100px] sm:max-w-[140px] leading-tight">{{ bmiStatus.desc }}</span>
             </div>
 
             <!-- WHR Section -->
@@ -749,7 +749,7 @@ function handleImport(event: Event) {
                 <span class="text-sm font-bold text-neutral-300">{{ whr || '--' }}</span>
                 <span class="text-[9px] ml-1.5 font-mono" :class="whrStatus.class">[{{ whrStatus.label }}]</span>
               </div>
-              <span class="text-[10px] text-neutral-600 text-right max-w-[140px] leading-tight">{{ whrStatus.desc }}</span>
+              <span class="text-[10px] text-neutral-600 text-right max-w-[100px] sm:max-w-[140px] leading-tight">{{ whrStatus.desc }}</span>
             </div>
           </div>
 
@@ -874,12 +874,12 @@ function handleImport(event: Event) {
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-surface border-b border-border-dim text-[10px] text-neutral-400 uppercase tracking-widest sticky top-0">
-                  <th class="p-2 w-[80px]">DATE</th>
-                  <th class="p-2 w-[55px]">WT</th>
-                  <th class="p-2 w-[40px]">BF%</th>
-                  <th class="p-2 w-[55px]">W/H</th>
-                  <th class="p-2">NOTE</th>
-                  <th class="p-2 text-right w-[70px]">ACT</th>
+                  <th class="p-1.5 sm:p-2 w-[60px] sm:w-[80px]">DATE</th>
+                  <th class="p-1.5 sm:p-2 w-[40px] sm:w-[55px]">WT</th>
+                  <th class="p-1.5 sm:p-2 w-[30px] sm:w-[40px] hidden sm:table-cell">BF%</th>
+                  <th class="p-1.5 sm:p-2 w-[40px] sm:w-[55px] hidden sm:table-cell">W/H</th>
+                  <th class="p-1.5 sm:p-2">NOTE</th>
+                  <th class="p-1.5 sm:p-2 text-right w-[55px] sm:w-[70px]">ACT</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-border-dim text-[10px]">
@@ -890,12 +890,12 @@ function handleImport(event: Event) {
                 >
                   <!-- Row normal mode -->
                   <template v-if="editingRecordId !== r.id">
-                    <td class="p-2 font-mono whitespace-nowrap">{{ r.date }}</td>
-                    <td class="p-2 font-bold">{{ r.weight }}</td>
-                    <td class="p-2">{{ r.bodyFat ? `${r.bodyFat}%` : '--' }}</td>
-                    <td class="p-2 font-mono whitespace-nowrap">{{ (r.waist && r.hip) ? `${r.waist}/${r.hip}` : '--' }}</td>
-                    <td class="p-2 text-neutral-500 truncate" :title="r.note">{{ r.note || '--' }}</td>
-                    <td class="p-2 text-right whitespace-nowrap">
+                    <td class="p-1.5 sm:p-2 font-mono whitespace-nowrap">{{ r.date }}</td>
+                    <td class="p-1.5 sm:p-2 font-bold">{{ r.weight }}</td>
+                    <td class="p-1.5 sm:p-2 hidden sm:table-cell">{{ r.bodyFat ? `${r.bodyFat}%` : '--' }}</td>
+                    <td class="p-1.5 sm:p-2 font-mono whitespace-nowrap hidden sm:table-cell">{{ (r.waist && r.hip) ? `${r.waist}/${r.hip}` : '--' }}</td>
+                    <td class="p-1.5 sm:p-2 text-neutral-500 truncate" :title="r.note">{{ r.note || '--' }}</td>
+                    <td class="p-1.5 sm:p-2 text-right whitespace-nowrap">
                       <button @click="startEdit(r)" class="text-accent hover:text-neutral-300 mr-2 cursor-pointer">EDIT</button>
                       <button @click="deleteRecord(r.id)" class="text-status-bad hover:text-neutral-300 font-bold cursor-pointer">DEL</button>
                     </td>
@@ -904,7 +904,7 @@ function handleImport(event: Event) {
                   <!-- Row inline edit mode -->
                   <template v-else>
                     <td class="p-1 whitespace-nowrap">
-                      <input v-model="editDate" type="date" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[80px] font-mono" />
+                      <input v-model="editDate" type="date" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[70px] sm:w-[80px] font-mono" />
                     </td>
                     <td class="p-1">
                       <input v-model.number="editWeight" type="number" step="0.1" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-[45px] font-bold" />

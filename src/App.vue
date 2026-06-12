@@ -123,7 +123,7 @@ function getFaviconUrl(urlStr: string): string {
 const activeGroupId = ref<string>('')
 const showCategorySidebar = ref(false)
 const currentPage = ref(0)
-const pageSize = computed(() => (config.value.gridRows ?? 3) * (config.value.gridCols ?? 5))
+const pageSize = computed(() => (config.value.gridRows ?? 5) * 12)
 const filteredItems = computed(() => !activeGroupId.value ? items.value : items.value.filter(i => i.groupId === activeGroupId.value))
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / pageSize.value)))
 const paginatedItems = computed(() => filteredItems.value.slice(currentPage.value * pageSize.value, currentPage.value * pageSize.value + pageSize.value))
@@ -515,7 +515,7 @@ onUnmounted(() => {
           <div v-else class="flex flex-col gap-4 min-h-[220px]">
             <div
               class="grid bg-neutral-800 gap-px p-4"
-              :style="{ gridTemplateColumns: `repeat(${config.gridCols ?? 5}, minmax(0, 1fr))` }"
+              style="grid-template-columns: repeat(auto-fill, minmax(72px, 1fr))"
             >
               <a v-for="item in paginatedItems" :key="item.id"
                 :href="isWidgetItem(item) ? 'javascript:void(0)' : item.url"
@@ -697,7 +697,7 @@ onUnmounted(() => {
         <div class="flex flex-col gap-3 border-b border-line pb-4">
           <div class="flex items-center justify-between">
             <span class="text-xs text-neutral-500 uppercase tracking-widest">ICON GRID</span>
-            <span class="text-[10px] text-neutral-600">{{ config.gridRows * config.gridCols }} ICONS/PAGE</span>
+            <span class="text-[10px] text-neutral-600">{{ config.gridRows * 12 }} ITEMS/PAGE</span>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-2">
@@ -712,7 +712,7 @@ onUnmounted(() => {
               <input type="range" min="1" max="12" v-model.number="config.gridRows" class="w-full accent-[#FF5F1F] cursor-pointer" />
             </div>
             <div class="flex flex-col gap-2">
-              <label class="text-[10px] text-neutral-600 uppercase tracking-widest">COLS ({{ config.gridCols }})</label>
+              <label class="text-[10px] text-neutral-600 uppercase tracking-widest">COLS ({{ config.gridCols }}) — auto-fill on mobile</label>
               <div class="flex items-center gap-2">
                 <button @click="config.gridCols = Math.max(2, config.gridCols - 1)"
                   class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">−</button>
