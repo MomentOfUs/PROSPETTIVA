@@ -82,6 +82,7 @@ async function fetchWeather() {
       }
     }
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), city: city.value, temp: temp.value, wind: wind.value, condition: condition.value }))
+    window.dispatchEvent(new CustomEvent('manga-weather-updated'))
     generateExtendedWeather(Number(temp.value) || 20)
   } catch {
     city.value = t('clock.beijing')
@@ -93,6 +94,8 @@ async function fetchWeather() {
         wind.value = String(weatherData.current_weather.windspeed)
         condition.value = weatherCodeMap[weatherData.current_weather.weathercode] || 'devtools.clear'
       }
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), city: city.value, temp: temp.value, wind: wind.value, condition: condition.value }))
+      window.dispatchEvent(new CustomEvent('manga-weather-updated'))
       generateExtendedWeather(Number(temp.value) || 20)
     } catch { city.value = 'ERROR' }
   } finally { loading.value = false }

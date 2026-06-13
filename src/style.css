@@ -232,3 +232,38 @@ a:focus-visible {
 .animate-shake {
   animation: shake 0.2s steps(2) 2;
 }
+
+/* ═══════════════════════════════════════════════════════
+   ECG / EKG (心电图) SVG Trace Scan Animation
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes ecg-scan {
+  0%   { stroke-dashoffset: 200; opacity: 0; }
+  5%   { opacity: 1; }
+  80%  { stroke-dashoffset: 0; opacity: 1; }
+  95%  { stroke-dashoffset: 0; opacity: 0.4; }
+  100% { stroke-dashoffset: 200; opacity: 0; }
+}
+
+@keyframes ecg-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px currentColor); }
+  50%       { filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor); }
+}
+
+.ecg-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: ecg-scan 1.8s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+.ecg-glow {
+  animation: ecg-glow 1.8s ease-in-out infinite;
+}
+
+/* ── AI Expression text glow ── */
+.text-glow {
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 10px currentColor;
+}

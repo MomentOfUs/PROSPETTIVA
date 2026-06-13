@@ -20,7 +20,12 @@ import {
   Activity as ActivityIcon,
   FileCode as FileCodeIcon,
   Wrench as WrenchIcon,
-  Hourglass as HourglassIcon
+  Hourglass as HourglassIcon,
+  Sun as SunIcon,
+  Cloud as CloudIcon,
+  CloudSnow as CloudSnowIcon,
+  CloudLightning as CloudLightningIcon,
+  CloudFog as CloudFogIcon
 } from '@lucide/vue'
 
 import MangaButton from './components/MangaButton.vue'
@@ -63,7 +68,9 @@ const iconMap: Record<string, any> = {
   Link: LinkIcon, Clock: ClockIcon, Cpu: CpuIcon, CloudRain: CloudRainIcon,
   MessageSquare: MessageSquareIcon, Globe: GlobeIcon, Bot: BotIcon,
   CheckSquare: CheckSquareIcon, FileText: FileTextIcon, Activity: ActivityIcon,
-  FileCode: FileCodeIcon, Wrench: WrenchIcon, Hourglass: HourglassIcon
+  FileCode: FileCodeIcon, Wrench: WrenchIcon, Hourglass: HourglassIcon,
+  Sun: SunIcon, Cloud: CloudIcon, CloudSnow: CloudSnowIcon,
+  CloudLightning: CloudLightningIcon, CloudFog: CloudFogIcon
 }
 
 const getIconComponent = (iconName: string) => iconMap[iconName] || LinkIcon
@@ -181,7 +188,21 @@ function clearAllDragTimers() {
 
 function handleItemDragStart(id: string, e: DragEvent) {
   dragItemId.value = id
-  if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id) }
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', id)
+    
+    // Set custom drag image as the icon block only (like phone drag)
+    const cardEl = e.currentTarget as HTMLElement
+    if (cardEl) {
+      const iconTile = cardEl.querySelector('.icon-tile') as HTMLElement
+      if (iconTile) {
+        const width = iconTile.offsetWidth || 64
+        const height = iconTile.offsetHeight || 64
+        e.dataTransfer.setDragImage(iconTile, width / 2, height / 2)
+      }
+    }
+  }
 }
 
 function handleItemDragOver(targetId: string, e: DragEvent) {
@@ -365,10 +386,162 @@ async function handleImport(e: Event) {
   finally { target.value = '' }
 }
 
+// ── AI 机器人可爱动态表情 (0=开心, 1=思考, 2=惊讶, 3=眯眼, 4=害羞) ──
+const aiExpressionIndex = ref(0)
+const AI_EXPRESSION_COUNT = 5
+let expressionIntervalId: any = null
+
+function startExpressionCycle() {
+  expressionIntervalId = setInterval(() => {
+    aiExpressionIndex.value = Math.floor(Math.random() * AI_EXPRESSION_COUNT)
+  }, 2800)
+}
+
+// ── 天气小组件动态图标绑定 ──
+const weatherCondition = ref('clear')
+
+function updateWeatherIconFromCache() {
+  const cached = sessionStorage.getItem('manga_weather_cache')
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached)
+      if (parsed.condition) {
+        const condKey = parsed.condition
+        if (condKey.includes('rain') || condKey.includes('drizzle') || condKey.includes('showers')) {
+          weatherCondition.value = 'rain'
+        } else if (condKey.includes('cloudy') || condKey.includes('overcast')) {
+          weatherCondition.value = 'cloud'
+        } else if (condKey.includes('snow')) {
+          weatherCondition.value = 'snow'
+        } else if (condKey.includes('storm') || condKey.includes('thunderstorm')) {
+          weatherCondition.value = 'storm'
+        } else if (condKey.includes('fog')) {
+          weatherCondition.value = 'fog'
+        } else {
+          weatherCondition.value = 'clear'
+        }
+        return
+      }
+    } catch {}
+  }
+  weatherCondition.value = 'clear'
+}
+
+function getWeatherIconComponent() {
+  switch (weatherCondition.value) {
+    case 'rain': return CloudRainIcon
+    case 'cloud': return CloudIcon
+    case 'snow': return CloudSnowIcon
+    case 'storm': return CloudLightningIcon
+    case 'fog': return CloudFogIcon
+    default: return SunIcon
+  }
+}
+
+function getWeatherIconClass() {
+  switch (weatherCondition.value) {
+    case 'clear': return 'animate-[spin_16s_linear_infinite] text-amber-500' // slow spinning sun
+    case 'rain': return 'animate-[bounce_2s_infinite] text-sky-400' // bouncing rain cloud
+    case 'storm': return 'animate-pulse text-yellow-300' // flashing lightning storm
+    case 'cloud': return 'animate-[pulse_4.5s_infinite] text-neutral-400' // gently floating cloud
+    case 'snow': return 'animate-[bounce_3s_infinite] text-blue-200' // slow drifting snow
+    default: return ''
+  }
+}
+
+// ── 自动箴言弹窗 (Inactivity Idle Prompt) ──
+const showIdleMotto = ref(false)
+const idleMottoStep = ref<'thinking' | 'bubble'>('thinking')
+const idleQuote = ref('心之所向，素履以往。')
+const idleAuthor = ref('佚名')
+const idleSource = ref('')
+
+const isHitokotoRendered = computed(() => {
+  return paginatedItems.value.some(item => isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'hitokoto')
+})
+
+let idleTimeoutId: any = null
+let cycleTimeoutId: any = null
+const IDLE_TIME_THRESHOLD = 30000 // 30秒无操作触发
+
+function resetIdleTimer() {
+  if (idleTimeoutId) clearTimeout(idleTimeoutId)
+  if (!showIdleMotto.value) {
+    idleTimeoutId = setTimeout(triggerIdleMotto, IDLE_TIME_THRESHOLD)
+  }
+}
+
+async function triggerIdleMotto() {
+  showIdleMotto.value = true
+  await loadNextMottoCycle()
+}
+
+async function loadNextMottoCycle() {
+  if (!showIdleMotto.value) return
+  idleMottoStep.value = 'thinking'
+  
+  const fetchPromise = fetchIdleQuote()
+  const delayPromise = new Promise(resolve => setTimeout(resolve, 1500))
+  
+  await Promise.all([fetchPromise, delayPromise])
+  if (!showIdleMotto.value) return
+  
+  idleMottoStep.value = 'bubble'
+  
+  // 10秒后自动过渡并拉取下一句
+  if (cycleTimeoutId) clearTimeout(cycleTimeoutId)
+  cycleTimeoutId = setTimeout(loadNextMottoCycle, 10000)
+}
+
+async function fetchIdleQuote() {
+  const cats = ['i', 'k', 'd', 'h', 'a', 'e']
+  const cat = cats[Math.floor(Math.random() * cats.length)]
+  try {
+    const res = await fetch(`https://v1.hitokoto.cn/?c=${cat}`)
+    const data = await res.json()
+    if (data && data.hitokoto) {
+      idleQuote.value = data.hitokoto
+      idleAuthor.value = data.from_who || '佚名'
+      idleSource.value = data.from || ''
+    }
+  } catch {
+    idleQuote.value = '山有木兮木有枝，心悦君兮君不知。'
+    idleAuthor.value = '佚名'
+    idleSource.value = '越人歌'
+  }
+}
+
+function closeIdleMotto() {
+  showIdleMotto.value = false
+  if (cycleTimeoutId) {
+    clearTimeout(cycleTimeoutId)
+    cycleTimeoutId = null
+  }
+  resetIdleTimer()
+}
+
+function copyIdleQuote() {
+  const fullText = `"${idleQuote.value}"\n—— ${idleAuthor.value} · 《${idleSource.value.replace(/^《|》$/g, '')}》`
+  navigator.clipboard.writeText(fullText)
+}
+
 onMounted(async () => {
   loadFromStorage(); setupPersistence(); setupAuthListener()
   window.addEventListener('artisan-request-cloud-push', queueCloudPush)
   window.addEventListener('manga-widgets-layout-updated', loadFromStorage)
+  
+  // 注册无操作监听器
+  window.addEventListener('mousemove', resetIdleTimer)
+  window.addEventListener('keydown', resetIdleTimer)
+  window.addEventListener('click', resetIdleTimer)
+  window.addEventListener('scroll', resetIdleTimer)
+  window.addEventListener('touchstart', resetIdleTimer)
+  resetIdleTimer()
+
+  // 注册机器人表情和天气监听器
+  startExpressionCycle()
+  window.addEventListener('manga-weather-updated', updateWeatherIconFromCache)
+  updateWeatherIconFromCache()
   
   // Apply initial accent theme
   applyAccentTheme(config.value.accentColor || 'orange')
@@ -386,6 +559,19 @@ onUnmounted(() => {
   destroyCanvas()
   window.removeEventListener('artisan-request-cloud-push', queueCloudPush)
   window.removeEventListener('manga-widgets-layout-updated', loadFromStorage)
+  
+  // 注销无操作监听器
+  window.removeEventListener('mousemove', resetIdleTimer)
+  window.removeEventListener('keydown', resetIdleTimer)
+  window.removeEventListener('click', resetIdleTimer)
+  window.removeEventListener('scroll', resetIdleTimer)
+  window.removeEventListener('touchstart', resetIdleTimer)
+  if (idleTimeoutId) clearTimeout(idleTimeoutId)
+  if (cycleTimeoutId) clearTimeout(cycleTimeoutId)
+
+  // 清除表情和天气定时器及监听
+  if (expressionIntervalId) clearInterval(expressionIntervalId)
+  window.removeEventListener('manga-weather-updated', updateWeatherIconFromCache)
 })
 </script>
 
@@ -638,7 +824,7 @@ onUnmounted(() => {
           <div v-else class="flex flex-col gap-4 min-h-[220px]">
             <div
               class="grid bg-neutral-800 gap-px p-4"
-              style="grid-template-columns: repeat(auto-fill, minmax(88px, 1fr))"
+              style="grid-template-columns: repeat(auto-fill, minmax(96px, 1fr))"
             >
               <a v-for="item in paginatedItems" :key="item.id"
                 :href="isWidgetItem(item) ? 'javascript:void(0)' : item.url"
@@ -649,7 +835,7 @@ onUnmounted(() => {
                 @dragover="handleItemDragOver(item.id, $event)"
                 @drop="handleItemDrop(item.id, $event)"
                 @dragend="handleDragEnd"
-                class="flex flex-col items-center gap-2 group/card relative select-none bg-surface p-2.5 w-full h-full justify-between"
+                class="flex flex-col items-center gap-2 group/card relative select-none bg-surface px-1.5 py-2.5 w-full h-full justify-between"
                 :class="[
                   item.size === 'wide' ? 'col-span-2' : '',
                   dragOverItemId === item.id ? 'opacity-50' : ''
@@ -667,15 +853,156 @@ onUnmounted(() => {
                 </div>
 
                 <div
-                  class="flex items-center justify-center transition-none group-hover/card:border-accent active:scale-95 cursor-grab active:cursor-grabbing overflow-hidden border border-line shrink-0"
+                  class="icon-tile flex items-center justify-center transition-none group-hover/card:border-accent active:scale-95 cursor-grab active:cursor-grabbing overflow-hidden border border-line shrink-0"
                   :class="[
                     item.size === 'wide' ? 'w-full h-16 sm:h-20' : 'w-16 h-16 sm:w-20 sm:h-20'
                   ]"
                   :style="{ backgroundColor: item.color }"
                 >
-                  <div v-if="isWidgetItem(item) || (item.icon !== 'Link' && item.icon !== 'Letter')" class="group-hover/card:text-accent transition-none flex items-center justify-center"
+                  <!-- 自定义图标: 身体数据心跳、AI机器人动态表情、动态天气或常规组件图标 -->
+                  <div v-if="isWidgetItem(item) || (item.icon !== 'Link' && item.icon !== 'Letter')" class="group-hover/card:text-accent transition-none flex items-center justify-center w-full h-full"
                     :style="{ color: getIconColor(item.color) }">
-                    <component :is="getIconComponent(item.icon)" class="w-8 h-8 sm:w-10 sm:h-10" />
+                    
+                    <!-- 1. 身体数据: 心电图 SVG 扫掠波形动画 -->
+                    <svg v-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'weight'"
+                      viewBox="0 0 48 32"
+                      class="w-10 h-7 sm:w-12 sm:h-8 ecg-glow"
+                      :style="{ color: getIconColor(item.color) }"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <!-- EKG 静止基线 -->
+                      <line x1="0" y1="16" x2="8" y2="16" stroke="currentColor" stroke-width="1.2" opacity="0.25" />
+                      <line x1="38" y1="16" x2="48" y2="16" stroke="currentColor" stroke-width="1.2" opacity="0.25" />
+                      <!-- EKG 心电波形 (P-QRS-T 典型波形) -->
+                      <polyline
+                        class="ecg-path"
+                        points="0,16 5,16 7,13 9,16 11,16 13,16 15,22 17,2 19,28 21,16 23,16 25,16 28,12 31,16 35,16 38,16 40,16"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        fill="none"
+                      />
+                    </svg>
+
+                    <!-- 2. AI 对话: 可爱圆润机器人 SVG，5种表情循环 -->
+                    <svg v-else-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'aichat'"
+                      viewBox="0 0 44 44"
+                      class="w-9 h-9 sm:w-11 sm:h-11"
+                      :style="{ color: getIconColor(item.color) }"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <!-- 天线竖杆 -->
+                      <line x1="22" y1="2" x2="22" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      <!-- 天线球 (可爱圆头) -->
+                      <circle cx="22" cy="2" r="2" fill="currentColor"/>
+                      <!-- 圆角头部 -->
+                      <rect x="5" y="9" width="34" height="26" rx="7" stroke="currentColor" stroke-width="1.6" fill="none"/>
+                      <!-- 左眼 (大圆眼) -->
+                      <circle cx="15" cy="19" r="3.2" fill="currentColor"/>
+                      <!-- 左眼高光 -->
+                      <circle cx="16.2" cy="17.8" r="1" fill="white" opacity="0.7"/>
+                      <!-- 右眼 (大圆眼) -->
+                      <circle cx="29" cy="19" r="3.2" fill="currentColor"/>
+                      <!-- 右眼高光 -->
+                      <circle cx="30.2" cy="17.8" r="1" fill="white" opacity="0.7"/>
+
+                      <!-- 表情0: 开心 — 上扬弧线笑嘴 -->
+                      <path v-if="aiExpressionIndex === 0"
+                        d="M14 28 Q22 34 30 28"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"
+                      />
+                      <!-- 表情1: 思考 — 歪嘴 + 腮红 -->
+                      <template v-else-if="aiExpressionIndex === 1">
+                        <path d="M15 29 Q20 27 28 30" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                        <circle cx="10" cy="22" r="2.5" fill="currentColor" opacity="0.25"/>
+                        <circle cx="34" cy="22" r="2.5" fill="currentColor" opacity="0.25"/>
+                      </template>
+                      <!-- 表情2: 惊讶 — 小圆嘴 O -->
+                      <ellipse v-else-if="aiExpressionIndex === 2"
+                        cx="22" cy="29" rx="3.5" ry="2.5"
+                        stroke="currentColor" stroke-width="1.6" fill="none"
+                      />
+                      <!-- 表情3: 眯眼开心 — 眼睛变弧线 + 笑嘴 -->
+                      <template v-else-if="aiExpressionIndex === 3">
+                        <!-- 覆盖圆眼 -->
+                        <rect x="5" y="9" width="34" height="26" rx="7" stroke="currentColor" stroke-width="1.6" fill="none"/>
+                        <path d="M11.5 19 Q15 15.5 18.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                        <path d="M25.5 19 Q29 15.5 32.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                        <path d="M14 28 Q22 34 30 28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                      </template>
+                      <!-- 表情4: 害羞 — 直线嘴 + 双腮红 -->
+                      <template v-else>
+                        <line x1="16" y1="29" x2="28" y2="29" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <ellipse cx="10" cy="22" rx="3" ry="2" fill="currentColor" opacity="0.3"/>
+                        <ellipse cx="34" cy="22" rx="3" ry="2" fill="currentColor" opacity="0.3"/>
+                      </template>
+
+                      <!-- 左耳 (半圆) -->
+                      <path d="M5 16 Q1 22 5 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <!-- 右耳 (半圆) -->
+                      <path d="M39 16 Q43 22 39 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    </svg>
+
+                    <!-- 3. 天气状况: 内联 SVG 随天气条件变化（与其他图标风格一致） -->
+                    <svg v-else-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'weather'"
+                      viewBox="0 0 40 40"
+                      class="w-9 h-9 sm:w-11 sm:h-11"
+                      :style="{ color: getIconColor(item.color) }"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <!-- 晴天: 太阳 -->
+                      <template v-if="weatherCondition === 'clear'">
+                        <circle cx="20" cy="20" r="6" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                        <line x1="20" y1="4" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="20" y1="32" x2="20" y2="36" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="4" y1="20" x2="8" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="32" y1="20" x2="36" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="8.1" y1="8.1" x2="11" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="29" y1="29" x2="31.9" y2="31.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="31.9" y1="8.1" x2="29" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="11" y1="29" x2="8.1" y2="31.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                      </template>
+                      <!-- 阴天: 云朵 -->
+                      <template v-else-if="weatherCondition === 'cloud'">
+                        <path d="M8 28 Q8 20 16 20 Q16 13 24 13 Q32 13 32 21 Q37 21 37 27 Q37 33 31 33 L10 33 Q4 33 4 27 Q4 21 8 21 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                      </template>
+                      <!-- 雨天: 云+雨 -->
+                      <template v-else-if="weatherCondition === 'rain'">
+                        <path d="M7 22 Q7 16 14 16 Q14 10 21 10 Q28 10 28 17 Q33 17 33 22 Q33 27 27 27 L8 27 Q3 27 3 22 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <line x1="11" y1="31" x2="9" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="18" y1="31" x2="16" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="25" y1="31" x2="23" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                      </template>
+                      <!-- 雪天: 云+雪花 -->
+                      <template v-else-if="weatherCondition === 'snow'">
+                        <path d="M7 22 Q7 16 14 16 Q14 10 21 10 Q28 10 28 17 Q33 17 33 22 Q33 27 27 27 L8 27 Q3 27 3 22 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <line x1="11" y1="32" x2="11" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="8" y1="35" x2="14" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="19" y1="32" x2="19" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="16" y1="35" x2="22" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="27" y1="32" x2="27" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <line x1="24" y1="35" x2="30" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                      </template>
+                      <!-- 雷暴: 云+闪电 -->
+                      <template v-else-if="weatherCondition === 'storm'">
+                        <path d="M7 20 Q7 14 14 14 Q14 8 21 8 Q28 8 28 15 Q33 15 33 20 Q33 25 27 25 L8 25 Q3 25 3 20 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <polyline points="22,28 16,35 20,35 14,43" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+                      </template>
+                      <!-- 雾天: 横线 -->
+                      <template v-else>
+                        <line x1="6" y1="14" x2="34" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="10" y1="20" x2="34" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="6" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <line x1="10" y1="32" x2="34" y2="32" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                      </template>
+                    </svg>
+
+                    <!-- 4. 默认组件图标 -->
+                    <component v-else :is="getIconComponent(item.icon)" class="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
                   <div v-else-if="item.icon === 'Link'" class="w-full h-full flex items-center justify-center p-3 sm:p-4">
                     <img v-if="getFaviconUrl(item.url) && !faviconErrors[item.id]"
@@ -698,7 +1025,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Label -->
-                <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-400 group-hover/card:text-accent transition-none truncate max-w-full block uppercase mt-1">
+                <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-400 group-hover/card:text-accent transition-none block uppercase mt-1 break-all">
                   <template v-if="isWidgetItem(item) || hasChinese(getItemTitle(item))">
                     <span class="text-neutral-600 group-hover/card:text-accent font-normal mr-0.5">[</span>
                     {{ getItemTitle(item) }}
@@ -747,18 +1074,76 @@ onUnmounted(() => {
                   </div>
                   <div class="absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-b border-r border-line bg-surface"></div>
                 </div>
+
+                <!-- 自动箴言弹窗 (Inactivity Idle Prompt - 从箴言卡片上方发出) -->
+                <Transition name="fade">
+                  <div v-if="showIdleMotto && isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'hitokoto'"
+                    @click.stop.prevent
+                    class="absolute bottom-[calc(100%+16px)] left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-surface border border-accent p-4 z-[100] select-none shadow-[4px_4px_0px_var(--color-accent)] flex flex-col gap-3 font-mono text-left animate-shake"
+                  >
+                    <!-- 气泡对话框尖角 (指向下方的卡片) -->
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-surface border-r border-b border-accent rotate-45 -translate-y-[6px]"></div>
+
+                    <!-- 弹窗头部 -->
+                    <div class="flex items-center justify-between border-b border-accent/20 pb-2">
+                      <div class="flex items-center gap-2 text-accent text-xs font-bold">
+                        <span class="inline-block w-2.5 h-2.5 bg-accent animate-pulse"></span>
+                        <span>{{ $t('idle.title') }}</span>
+                      </div>
+                      <button @click.stop.prevent="closeIdleMotto" class="text-neutral-500 hover:text-accent font-bold text-xs cursor-pointer border-0 bg-transparent outline-none">
+                        [ X ]
+                      </button>
+                    </div>
+
+                    <!-- 思考状态 -->
+                    <div v-if="idleMottoStep === 'thinking'" class="py-6 flex flex-col gap-2 justify-center items-center text-xs text-neutral-400">
+                      <div class="flex items-center gap-1.5 font-bold">
+                        <span class="text-accent cursor-blink">&gt;</span>
+                        <span>{{ $t('idle.thinking') }}</span>
+                      </div>
+                      <!-- 闪烁载入状态条 -->
+                      <div class="text-[10px] text-accent animate-pulse mt-2">
+                        [■■■■■■■■□□□□] 64% LOADING...
+                      </div>
+                    </div>
+
+                    <!-- 消息气泡显示状态 -->
+                    <div v-if="idleMottoStep === 'bubble'" class="flex flex-col gap-3">
+                      <!-- 消息内容 -->
+                      <div class="relative bg-base border border-line p-3 text-neutral-300 text-xs sm:text-sm leading-relaxed rounded-none select-text">
+                        <p class="font-semibold text-neutral-200">"{{ idleQuote }}"</p>
+                        <div class="text-right text-[10px] text-neutral-500 mt-2 font-mono">
+                          —— {{ idleAuthor }} <span v-if="idleSource">· 《{{ idleSource.replace(/^《|》$/g, '') }}》</span>
+                        </div>
+                      </div>
+
+                      <!-- 功能按钮 -->
+                      <div class="flex items-center justify-between mt-1 text-[10px]">
+                        <span class="text-neutral-600 font-mono">{{ $t('idle.active') }}</span>
+                        <div class="flex gap-2">
+                          <button @click.stop.prevent="triggerIdleMotto" class="text-accent hover:underline cursor-pointer border-0 bg-transparent outline-none font-bold">
+                            {{ $t('idle.reevaluate') }}
+                          </button>
+                          <button @click.stop.prevent="copyIdleQuote" class="text-neutral-400 hover:text-white cursor-pointer border-0 bg-transparent outline-none font-bold">
+                            {{ $t('idle.copy') }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
               </a>
             </div>
 
             <!-- Quick Add Tile -->
             <div v-if="paginatedItems.length < pageSize"
               @click="openAddItem(activeGroupId || groups[0]?.id)"
-              class="flex flex-col items-center gap-2 group/card cursor-pointer select-none bg-surface p-2.5 w-full h-full justify-between"
+              class="flex flex-col items-center gap-2 group/card cursor-pointer select-none bg-surface px-1.5 py-2.5 w-full h-full justify-between"
             >
               <div class="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line flex items-center justify-center bg-surface hover:bg-neutral-300/10 transition-none shrink-0">
                 <PlusIcon class="w-6 h-6 sm:w-8 sm:h-8 text-neutral-600 group-hover/card:text-accent" />
               </div>
-              <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-500 group-hover/card:text-accent transition-none truncate max-w-full block uppercase mt-1">
+              <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-500 group-hover/card:text-accent transition-none block uppercase mt-1 break-all">
                 {{ $t('add.tile') }}
               </span>
             </div>
@@ -1047,5 +1432,60 @@ onUnmounted(() => {
         </div>
       </div>
     </MangaModal>
+
+    <!-- 自动箴言弹窗 (Inactivity Idle Prompt - 仅在当前页面找不到箴言卡片时作为右下角 fallback) -->
+    <Transition name="slide-drawer">
+      <div v-if="showIdleMotto && !isHitokotoRendered" class="fixed bottom-6 right-6 w-80 sm:w-96 bg-surface border border-accent p-4 z-[99] select-none shadow-[4px_4px_0px_var(--color-accent)] flex flex-col gap-3 font-mono text-left">
+        <!-- 弹窗头部 -->
+        <div class="flex items-center justify-between border-b border-accent/20 pb-2">
+          <div class="flex items-center gap-2 text-accent text-xs font-bold">
+            <span class="inline-block w-2.5 h-2.5 bg-accent animate-pulse"></span>
+            <span>{{ $t('idle.title') }}</span>
+          </div>
+          <button @click="closeIdleMotto" class="text-neutral-500 hover:text-accent font-bold text-xs cursor-pointer border-0 bg-transparent outline-none">
+            [ X ]
+          </button>
+        </div>
+
+        <!-- 思考状态 -->
+        <div v-if="idleMottoStep === 'thinking'" class="py-6 flex flex-col gap-2 justify-center items-center text-xs text-neutral-400">
+          <div class="flex items-center gap-1.5 font-bold">
+            <span class="text-accent cursor-blink">&gt;</span>
+            <span>{{ $t('idle.thinking') }}</span>
+          </div>
+          <!-- 闪烁载入状态条 -->
+          <div class="text-[10px] text-accent animate-pulse mt-2">
+            [■■■■■■■■□□□□] 64% LOADING...
+          </div>
+        </div>
+
+        <!-- 消息气泡显示状态 -->
+        <div v-if="idleMottoStep === 'bubble'" class="flex flex-col gap-3">
+          <!-- 消息气泡样式 -->
+          <div class="relative bg-base border border-line p-3 text-neutral-300 text-xs sm:text-sm leading-relaxed rounded-none select-text">
+            <!-- 气泡对话框尖角 -->
+            <div class="absolute bottom-full right-8 w-3 h-3 bg-base border-t border-l border-line rotate-45 translate-y-[7px]"></div>
+            
+            <p class="font-semibold text-neutral-200">"{{ idleQuote }}"</p>
+            <div class="text-right text-[10px] text-neutral-500 mt-2 font-mono">
+              —— {{ idleAuthor }} <span v-if="idleSource">· 《{{ idleSource.replace(/^《|》$/g, '') }}》</span>
+            </div>
+          </div>
+
+          <!-- 功能按钮 -->
+          <div class="flex items-center justify-between mt-1 text-[10px]">
+            <span class="text-neutral-600 font-mono">{{ $t('idle.active') }}</span>
+            <div class="flex gap-2">
+              <button @click="triggerIdleMotto" class="text-accent hover:underline cursor-pointer border-0 bg-transparent outline-none font-bold">
+                {{ $t('idle.reevaluate') }}
+              </button>
+              <button @click="copyIdleQuote" class="text-neutral-400 hover:text-white cursor-pointer border-0 bg-transparent outline-none font-bold">
+                {{ $t('idle.copy') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>

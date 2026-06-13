@@ -595,4 +595,10 @@ export const zh = {
   'accent.yellow': '复古黄',
   'accent.blue': '冰晶蓝',
   'accent.purple': '初号机紫',
+  // ── Idle Motto ──
+  'idle.title': '[ 系统的低语 ]',
+  'idle.thinking': '正在检索混沌虚空中的箴言...',
+  'idle.copy': '[ 复制 ]',
+  'idle.reevaluate': '[ 重新评估 ]',
+  'idle.active': '空闲调度器: 激活',
 }

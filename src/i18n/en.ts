@@ -595,4 +595,10 @@ export const en = {
   'accent.yellow': 'RETRO_YELLOW',
   'accent.blue': 'ICE_BLUE',
   'accent.purple': 'EVA_PURPLE',
+  // ── Idle Motto ──
+  'idle.title': '[ SYSTEM MURMUR ]',
+  'idle.thinking': 'RETRIEVING DATA FROM CHAOS VOID...',
+  'idle.copy': '[ COPY ]',
+  'idle.reevaluate': '[ RE-EVALUATE ]',
+  'idle.active': 'IDLE_DISPATCHER: ACTIVE',
 }
