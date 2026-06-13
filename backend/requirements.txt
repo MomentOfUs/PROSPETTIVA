@@ -4,3 +4,5 @@ sqlmodel>=0.0.16
 pyjwt>=2.8.0
 passlib[bcrypt]>=1.7.4
 python-multipart>=0.0.9
+psutil>=5.9.8
+

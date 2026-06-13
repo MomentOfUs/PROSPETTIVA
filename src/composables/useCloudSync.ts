@@ -32,7 +32,7 @@ export function useCloudSync(
     if (!isLoggedIn()) return
     try {
       isSyncing.value = true
-      syncMessage.value = '正在对齐云端天盘数据...'
+      syncMessage.value = '[ SYNC PULL ] fetching cloud state...'
       const cloudData = await api.pull()
 
       if (cloudData.logo_text) {
@@ -43,7 +43,21 @@ export function useCloudSync(
         if (cloudData.openai_base) config.value.openaiBase = cloudData.openai_base
         if (cloudData.openai_model) config.value.openaiModel = cloudData.openai_model
         if (cloudData.widgets_json) {
-          config.value.widgets = JSON.parse(cloudData.widgets_json)
+          try {
+            const parsed = JSON.parse(cloudData.widgets_json)
+            if (parsed && parsed.widgets) {
+              config.value.widgets = parsed.widgets
+              if (parsed.accentColor) config.value.accentColor = parsed.accentColor
+              if (parsed.layout) {
+                localStorage.setItem('manga_widgets_layout', JSON.stringify(parsed.layout))
+                window.dispatchEvent(new Event('manga-widgets-layout-updated'))
+              }
+            } else {
+              config.value.widgets = parsed
+            }
+          } catch {
+            // Keep default
+          }
         }
       }
 
@@ -74,12 +88,12 @@ export function useCloudSync(
       window.dispatchEvent(new Event('manga-config-updated'))
       window.dispatchEvent(new Event('artisan-cloud-data-pulled'))
 
-      syncMessage.value = '天盘数据对齐成功！'
-      if (!silent) alert('天盘数据拉取并合并成功！')
+      syncMessage.value = 'PULL_OK'
+      if (!silent) alert('[ SYNC ] Cloud data merged successfully.')
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '未知错误'
-      syncMessage.value = '同步失败：' + msg
-      if (!silent) alert('同步失败: ' + msg)
+      const msg = err instanceof Error ? err.message : 'UNKNOWN_ERR'
+      syncMessage.value = 'PULL_FAIL: ' + msg
+      if (!silent) alert('[ SYNC ] Pull failed: ' + msg)
     } finally {
       isSyncing.value = false
     }
@@ -94,7 +108,11 @@ export function useCloudSync(
       openai_key: config.value.openaiKey || '',
       openai_base: config.value.openaiBase || '',
       openai_model: config.value.openaiModel || '',
-      widgets_json: JSON.stringify(config.value.widgets),
+      widgets_json: JSON.stringify({
+        widgets: config.value.widgets,
+        accentColor: config.value.accentColor,
+        layout: JSON.parse(localStorage.getItem('manga_widgets_layout') || '[]')
+      }),
       // 将前端 camelCase groupId 映射回 snake_case group_id
       groups: groups.value,
       items: items.value.map(i => ({
@@ -121,14 +139,14 @@ export function useCloudSync(
   async function pushCloudData() {
     try {
       isSyncing.value = true
-      syncMessage.value = '正在将本地星谱上传至天盘...'
+      syncMessage.value = '[ SYNC PUSH ] uploading local state...'
       await performCloudPush()
-      syncMessage.value = '上传同步成功！'
-      alert('本地星谱已成功推送至云端天盘！')
+      syncMessage.value = 'PUSH_OK'
+      alert('[ SYNC ] Local data pushed to cloud.')
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '未知错误'
-      syncMessage.value = '上传失败：' + msg
-      alert('上传本地数据至云端失败: ' + msg)
+      const msg = err instanceof Error ? err.message : 'UNKNOWN_ERR'
+      syncMessage.value = 'PUSH_FAIL: ' + msg
+      alert('[ SYNC ] Push failed: ' + msg)
     } finally {
       isSyncing.value = false
     }
@@ -142,10 +160,10 @@ export function useCloudSync(
     pushTimeout = setTimeout(async () => {
       try {
         await performCloudPush()
-        console.log('--- 乾坤云端静默上传成功 ---')
+        console.log('--- cloud_sync: silent push OK ---')
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : '未知错误'
-        console.warn('云端静默上传失败：', msg)
+        const msg = err instanceof Error ? err.message : 'UNKNOWN_ERR'
+        console.warn('cloud_sync: silent push failed:', msg)
       }
     }, 2000)
   }
@@ -154,7 +172,7 @@ export function useCloudSync(
   async function handleAuthSubmit() {
     authError.value = ''
     if (!authForm.value.username || !authForm.value.password) {
-      authError.value = '用户名与密码不能为空'
+      authError.value = 'AUTH_EMPTY_FIELDS'
       return
     }
     try {
@@ -164,7 +182,7 @@ export function useCloudSync(
       showAuthModal.value = false
       authForm.value.password = ''
     } catch (err: unknown) {
-      authError.value = err instanceof Error ? err.message : '登录失败'
+      authError.value = err instanceof Error ? err.message : 'AUTH_FAIL'
     } finally {
       isSyncing.value = false
     }
@@ -172,11 +190,11 @@ export function useCloudSync(
 
   /** 退出登录 */
   function handleLogout() {
-    if (confirm('确认退出当前天盘账号登录吗？退出后将切换回本地模式。')) {
+    if (confirm('[ AUTH ] Logout? Will revert to local-only mode.')) {
       removeToken()
       showAuthModal.value = false
       authForm.value.password = ''
-      alert('已成功退出登录，已切回本地 LocalStorage 运行模态。')
+      alert('[ AUTH ] Logged out. Switched to local storage.')
     }
   }
 

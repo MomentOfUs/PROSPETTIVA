@@ -182,8 +182,8 @@ function createNewNote() {
   const newId = Date.now().toString()
   notes.value.push({
     id: newId,
-    title: '未命名灵感手稿',
-    content: '新笔录手札。',
+    title: t('notes.no_title'),
+    content: 'New entry.',
     updatedAt: new Date().toISOString()
   })
   activeNoteId.value = newId
@@ -191,10 +191,10 @@ function createNewNote() {
 
 function deleteNote(id: string) {
   if (notes.value.length <= 1) {
-    alert('[ERROR] MIN_ONE_NOTE_REQUIRED')
+    alert('[ERROR] ' + t('alert.min_one_note'))
     return
   }
-  if (confirm('[ DESTROY ] ? [IRREVERSIBLE]')) {
+  if (confirm(t('confirm.destroy'))) {
     notes.value = notes.value.filter(n => n.id !== id)
     if (activeNoteId.value === id) {
       activeNoteId.value = notes.value[0].id
@@ -210,7 +210,7 @@ function handleContentInput() {
     if (firstLine) {
       activeNote.value.title = firstLine.length > 15 ? firstLine.substring(0, 15) + '...' : firstLine
     } else {
-      activeNote.value.title = '无标题便签'
+      activeNote.value.title = t('notes.no_title')
     }
   }
 }
@@ -220,11 +220,11 @@ function handleContentInput() {
   <!-- Preview Mode -->
   <div v-if="preview" class="text-left font-mono text-[10px] max-h-[120px] overflow-y-auto w-full break-all whitespace-pre-wrap leading-relaxed select-text p-1 text-neutral-400">
     <div v-if="isLocked" class="text-center text-neutral-500 py-4">
-      [LOCKED] 秘语手札已加锁<br>
-      <span class="text-[8px] opacity-70">点击卡片输入密码以解锁</span>
+      {{ $t('notes.locked_preview') }}<br>
+      <span class="text-[8px] opacity-70">{{ $t('notes.locked_click') }}</span>
     </div>
     <div v-else-if="!activeNote || !activeNote.content.trim()" class="text-center text-neutral-600 py-4">
-      手札空无一物，点击以记录。
+      {{ $t('notes.empty_preview') }}
     </div>
     <div v-else class="text-neutral-300 bg-surface border border-line p-2">
       {{ activeNote.content }}
@@ -233,33 +233,32 @@ function handleContentInput() {
 
   <!-- Full Mode -->
   <div v-else class="w-full flex flex-col gap-3 font-mono select-none text-neutral-300">
-    <!-- Action Bar -->
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-accent">[ NOTES ]</span>
+    <!-- Action Bar Controls -->
+    <div class="flex items-center justify-end border-b border-line pb-2.5">
       <div class="flex items-center gap-1.5">
         <button 
           v-if="!isPasswordSet && !showSetupPanel"
           @click="showSetupPanel = true"
           class="text-[10px] bg-surface border border-line text-neutral-400 hover:text-black hover:border-accent px-2 py-0.5 cursor-pointer transition-none"
-          title="加密备忘录"
+          :title="$t('notes.encrypted')"
         >
-          [LOCK] 封存密语
+          {{ $t('notes.lock_encrypt') }}
         </button>
         <button 
           v-if="isPasswordSet && !isLocked && !showResetPanel"
           @click="lockImmediately"
           class="text-[10px] bg-surface border border-line text-neutral-500 hover:text-black hover:border-accent px-2 py-0.5 cursor-pointer transition-none"
-          title="立刻锁定"
+          :title="$t('notes.lock_now_btn')"
         >
-          [LOCK] 锁上
+          {{ $t('notes.lock_now_btn') }}
         </button>
         <button 
           v-if="isPasswordSet && !isLocked && !showResetPanel"
           @click="showResetPanel = true"
           class="text-[10px] bg-surface border border-line text-neutral-400 hover:text-black hover:border-accent px-2 py-0.5 cursor-pointer transition-none"
-          title="解除加密"
+          :title="$t('notes.decrypt_unlock')"
         >
-          [UNLOCK] 启封密语
+          {{ $t('notes.decrypt_unlock') }}
         </button>
       </div>
     </div>
@@ -275,7 +274,7 @@ function handleContentInput() {
           @click="createNewNote"
           class="w-full text-center border border-line text-accent hover:bg-surface py-1.5 text-xs cursor-pointer transition-none"
         >
-          + 撰写新笔记
+          {{ $t('notes.new_note') }}
         </button>
 
         <div class="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible max-h-[120px] lg:max-h-[380px] pr-0.5 mt-1">
@@ -290,7 +289,7 @@ function handleContentInput() {
             <button 
               @click.stop="deleteNote(noteItem.id)"
               class="text-neutral-600 hover:text-red-500 text-[9px] cursor-pointer pl-1"
-              title="销毁便签"
+              :title="$t('notes.destroy')"
             >
               ×
             </button>
@@ -310,7 +309,7 @@ function handleContentInput() {
               <path d="M12 17.5v2" />
             </svg>
           </div>
-          <span class="text-[10px] tracking-widest text-neutral-500">[ SECURED ] 手稿密存 · 密语解禁</span>
+          <span class="text-[10px] tracking-widest text-neutral-500">{{ $t('notes.secured') }}</span>
           
           <div class="w-full max-w-sm flex flex-col gap-2 mx-auto mt-2">
             <div class="flex border border-line overflow-hidden bg-surface">
@@ -318,35 +317,35 @@ function handleContentInput() {
                 v-model="pwdInput"
                 type="password"
                 @keydown.enter="handleUnlock"
-                placeholder="输入启封密语..."
+                :placeholder="$t('notes.enter_passphrase')"
                 class="w-full px-3 py-2 text-xs outline-none bg-transparent text-neutral-300 placeholder-neutral-600 font-mono"
               />
               <button 
                 @click="handleUnlock"
                 class="bg-surface hover:text-black border-l border-line px-4 text-xs font-bold cursor-pointer text-neutral-400 transition-none"
               >
-                启封
+                {{ $t('notes.unlock_btn') }}
               </button>
             </div>
             <p v-if="showError" class="text-xs text-red-500 text-center tracking-wider">
-              ※ 密语不匹配，手稿未能启封！
+              ※ {{ $t('notes.auth_fail') }}
             </p>
           </div>
         </div>
 
         <!-- 2. SETUP PASSWORD PANEL -->
         <div v-else-if="showSetupPanel" class="flex flex-col gap-3 py-4 text-xs md:text-sm flex-grow justify-center max-w-md mx-auto w-full">
-          <span class="text-xs text-neutral-500 text-center">[ SETUP ] 创设启封密语</span>
+          <span class="text-xs text-neutral-500 text-center">{{ $t('notes.setup_passphrase') }}</span>
           <input 
             v-model="setupPwdInput"
             type="password"
-            placeholder="设定密码密语..."
+            :placeholder="$t('notes.set_passphrase')"
             class="border border-line p-2.5 bg-surface text-neutral-300 placeholder-neutral-600 outline-none font-mono focus:border-accent"
           />
           <input 
             v-model="setupPwdConfirmInput"
             type="password"
-            placeholder="再次确认密语..."
+            :placeholder="$t('notes.confirm_passphrase')"
             class="border border-line p-2.5 bg-surface text-neutral-300 placeholder-neutral-600 outline-none font-mono focus:border-accent"
           />
           
@@ -355,29 +354,29 @@ function handleContentInput() {
               @click="showSetupPanel = false; showSetupError = false"
               class="border border-line px-4 py-1.5 text-xs bg-surface text-neutral-400 hover:text-neutral-300 cursor-pointer transition-none"
             >
-              取消
+              {{ $t('notes.back') }}
             </button>
             <button 
               @click="handleSetPassword"
               class="border border-line px-4 py-1.5 text-xs bg-surface text-accent hover:bg-surface transition-none cursor-pointer font-bold"
             >
-              保存密记
+              {{ $t('notes.save') }}
             </button>
           </div>
           <p v-if="showSetupError" class="text-xs text-red-500 text-center">
-            ※ 密语为空或两次输入不一致！
+            ※ {{ $t('notes.passphrase_empty_or_mismatch') }}
           </p>
         </div>
 
         <!-- 3. RESET PASSWORD PANEL -->
         <div v-else-if="showResetPanel" class="flex flex-col gap-3 py-4 text-xs md:text-sm flex-grow justify-center max-w-md mx-auto w-full">
-          <span class="text-xs text-neutral-500 text-center">[ RESET ] 请输入当前密码以启封解开记事本</span>
+          <span class="text-xs text-neutral-500 text-center">[ {{ $t('bio.reset') }} ] {{ $t('notes.enter_passphrase') }}</span>
           <div class="flex border border-line overflow-hidden bg-surface">
             <input 
               v-model="pwdInput"
               type="password"
               @keydown.enter="handleResetPassword"
-              placeholder="当前启封密语..."
+              :placeholder="$t('notes.enter_passphrase')"
               class="w-full px-3 py-2 text-xs outline-none bg-transparent text-neutral-300 placeholder-neutral-600 font-mono"
             />
           </div>
@@ -387,17 +386,17 @@ function handleContentInput() {
               @click="showResetPanel = false; pwdInput = ''; showError = false"
               class="border border-line px-4 py-1.5 text-xs bg-surface text-neutral-400 hover:text-neutral-300 cursor-pointer transition-none"
             >
-              返回
+              {{ $t('notes.back') }}
             </button>
             <button 
               @click="handleResetPassword"
               class="border border-line px-4 py-1.5 text-xs bg-surface text-red-500 hover:bg-surface cursor-pointer transition-none"
             >
-              解印
+              {{ $t('notes.decrypt_btn') }}
             </button>
           </div>
           <p v-if="showError" class="text-xs text-red-500 text-center">
-            ※ 密语不匹配，无法启封手稿！
+            ※ {{ $t('notes.auth_fail') }}
           </p>
         </div>
 
@@ -407,10 +406,10 @@ function handleContentInput() {
             v-model="activeNote.content"
             @input="handleContentInput"
             class="w-full min-h-[380px] lg:min-h-[420px] bg-surface border border-line p-3.5 text-xs md:text-sm text-neutral-300 font-mono outline-none resize-none focus:border-accent transition-none leading-relaxed flex-grow"
-            placeholder="在此手书笔录灵感珍册..."
+            :placeholder="$t('notes.write_here')"
           ></textarea>
           <div class="text-[9px] text-neutral-600 text-right select-none">
-            最后修订：{{ new Date(activeNote.updatedAt).toLocaleString() }}
+            {{ $t('notes.last_modified') }} {{ new Date(activeNote.updatedAt).toLocaleString() }}
           </div>
         </div>
       </div>

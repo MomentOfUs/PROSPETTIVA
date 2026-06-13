@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
-import { triggerCloudPush } from '../../utils/api'
+import { triggerCloudPush, isLoggedIn, getToken } from '../../utils/api'
+import { t } from '../../i18n'
 
 const props = withDefaults(defineProps<{
   preview?: boolean
@@ -22,9 +23,9 @@ interface ChatSession {
 const sessions = ref<ChatSession[]>([
   {
     id: 'init_chat_sess',
-    title: '探求万物之始',
+    title: 'INIT_SEED',
     messages: [
-      { role: 'assistant', content: '您好，远方的学者。我是这里存留的学术精魂。若您想探求世间万物的秩序，可在右上角【系统配置】中填入您的 DeepSeek/OpenAI 密钥，以开启真正的全知之眼。' }
+      { role: 'assistant', content: t('aichat.system_ready') }
     ]
   }
 ])
@@ -46,6 +47,15 @@ const chatContainer = ref<HTMLElement | null>(null)
 const apiKey = ref('')
 const apiBase = ref('https://api.deepseek.com')
 const apiModel = ref('deepseek-chat')
+
+const isUserLoggedIn = ref(isLoggedIn())
+
+const chatNodeStatus = computed(() => {
+  if (isUserLoggedIn.value) {
+    return `NODE: CLOUD_${apiModel.value.toUpperCase()}`
+  }
+  return apiKey.value ? `NODE: ${apiModel.value}` : 'FREE_MODE'
+})
 
 function loadConfig() {
   const storedConfig = localStorage.getItem('manga_config')
@@ -75,9 +85,9 @@ function loadSessions() {
     const initId = Date.now().toString()
     sessions.value = [{
       id: initId,
-      title: '探求万物之始',
+      title: 'INIT_SEED',
       messages: [
-        { role: 'assistant', content: '您好，远方的学者。我是这里存留的学术精魂。若您想探求世间万物的秩序，可在右上角【系统配置】中填入您的 DeepSeek/OpenAI 密钥，以开启真正的全知之眼。' }
+        { role: 'assistant', content: t('aichat.system_ready') }
       ]
     }]
   }
@@ -98,6 +108,9 @@ onMounted(() => {
   
   // Listen for config updates
   window.addEventListener('manga-config-updated', loadConfig)
+  window.addEventListener('artisan-auth-state-changed', () => {
+    isUserLoggedIn.value = isLoggedIn()
+  })
 })
 
 function scrollToBottom() {
@@ -112,9 +125,9 @@ function createNewSession() {
   const newId = Date.now().toString()
   sessions.value.push({
     id: newId,
-    title: `思辨探讨 #${sessions.value.length + 1}`,
+    title: `THREAD_${sessions.value.length + 1}`,
     messages: [
-      { role: 'assistant', content: '新会话已开启。请向贤者提问任何关于天体、算法或哲理的困惑。' }
+      { role: 'assistant', content: t('aichat.thread_init') }
     ]
   })
   activeSessionId.value = newId
@@ -123,10 +136,10 @@ function createNewSession() {
 
 function deleteSession(id: string) {
   if (sessions.value.length <= 1) {
-    alert('[ERROR] MIN_ONE_CHAT_REQUIRED')
+    alert(t('alert.min_one_chat'))
     return
   }
-  if (confirm('[ DESTROY ] ?')) {
+  if (confirm(t('confirm.destroy'))) {
     sessions.value = sessions.value.filter(s => s.id !== id)
     if (activeSessionId.value === id) {
       activeSessionId.value = sessions.value[0].id
@@ -144,11 +157,96 @@ async function sendMessage() {
   scrollToBottom()
 
   // Update session title dynamically if default
-  if (activeSession.value.title.startsWith('思辨探讨 #')) {
+  if (activeSession.value.title.startsWith('THREAD_')) {
     activeSession.value.title = userText.length > 8 ? userText.substring(0, 8) + '...' : userText
   }
 
-  // 1. If user configured custom API Key
+  // 1. If user is logged in, use backend proxy EventSource/SSE stream
+  if (isUserLoggedIn.value) {
+    try {
+      const BASE_URL = import.meta.env.DEV ? 'http://localhost:8000' : ''
+      const res = await fetch(`${BASE_URL}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          messages: activeSession.value.messages.map(m => ({ role: m.role, content: m.content }))
+        })
+      })
+
+      if (!res.ok) {
+        let errText = `ERR_API: ${res.status}`
+        try {
+          const errData = await res.json()
+          if (errData && errData.detail) {
+            if (errData.detail === 'AI_KEY_NOT_CONFIGURED') {
+              errText = 'ERR_API: Cloud key is not configured. Please set OpenAI Key in settings.'
+            } else {
+              errText = `ERR_API: ${errData.detail}`
+            }
+          }
+        } catch {}
+        throw new Error(errText)
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) {
+        throw new Error('SSE stream reader not available.')
+      }
+
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+      
+      const assistantMessageIndex = activeSession.value.messages.length
+      activeSession.value.messages.push({ role: 'assistant', content: '' })
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          if (trimmed === 'data: [DONE]') continue
+          
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.substring(6)
+            try {
+              const dataObj = JSON.parse(dataStr)
+              if (dataObj.error) {
+                activeSession.value.messages[assistantMessageIndex].content += `\n[ERROR: ${dataObj.error}]`
+                continue
+              }
+              const content = dataObj.choices?.[0]?.delta?.content
+              if (content) {
+                activeSession.value.messages[assistantMessageIndex].content += content
+                scrollToBottom()
+              }
+            } catch (e) {
+              // Ignore partial or non-JSON messages
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      activeSession.value.messages.push({
+        role: 'assistant',
+        content: err.message || 'unknown API stream error'
+      })
+      scrollToBottom()
+    } finally {
+      loading.value = false
+    }
+    return
+  }
+
+  // 2. If user configured custom API Key offline
   if (apiKey.value) {
     try {
       const res = await fetch(`${apiBase.value}/v1/chat/completions`, {
@@ -173,13 +271,13 @@ async function sendMessage() {
       } else {
         activeSession.value.messages.push({
           role: 'assistant',
-          content: `错误: 接口返回异常。请检查模型名称 [${apiModel.value}] 或密钥配置。`
+          content: `ERR_API: check model [${apiModel.value}] or API key config.`
         })
       }
     } catch (err: any) {
       activeSession.value.messages.push({
         role: 'assistant',
-        content: `连接失败: ${err.message || '未知网络偏差'}`
+        content: `CONN_FAIL: ${err.message || 'unknown network error'}`
       })
     } finally {
       loading.value = false
@@ -188,7 +286,7 @@ async function sendMessage() {
     return
   }
 
-  // 2. Fallback to free public AI API
+  // 3. Fallback to free public AI API
   try {
     const res = await fetch(`https://api.pearktrue.cn/api/gpt/?message=${encodeURIComponent(userText)}&type=chat`)
     const data = await res.json()
@@ -196,15 +294,15 @@ async function sendMessage() {
       activeSession.value.messages.push({ role: 'assistant', content: data.result })
     } else {
       const fallbacks = [
-        '求知之路无穷，但当前免费通道已被迷雾笼罩。请在系统配置里填入您的 API 密钥以唤醒真正的哲人。',
-        '您的学识令人敬佩。若能插上专属的 API 密钥之翼，我将能为您提供更深刻 of 洞察。',
-        '大自然以数学的语言写就。请在后台完善您的 API Key 配置，以便我们深入探索其中的奥秘。'
+        'FREE_TIER exhausted. Configure your API key in settings for unlimited access.',
+        'Rate limit reached on free tier. Set up your own API key for full capacity.',
+        'Free channel unavailable. Add your API credentials to unlock unlimited queries.'
       ]
       const randomMsg = fallbacks[Math.floor(Math.random() * fallbacks.length)]
       activeSession.value.messages.push({ role: 'assistant', content: randomMsg })
     }
   } catch {
-    activeSession.value.messages.push({ role: 'assistant', content: '连接有些波动，请稍后再试，或在配置中录入您的专属 API 密钥。' })
+    activeSession.value.messages.push({ role: 'assistant', content: 'CONN_UNSTABLE: retry or configure your API key in settings.' })
   } finally {
     loading.value = false
     scrollToBottom()
@@ -214,47 +312,46 @@ async function sendMessage() {
 
 <template>
   <!-- Preview Mode -->
-  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 font-mono py-3 text-center text-neutral-500 w-full">
-    <div class="text-[11px] font-bold text-gold">哲人思辨录</div>
-    <div class="text-[9px] opacity-75 mt-1 leading-relaxed max-w-[220px]">
-      💬 哲人对话姬已就绪，点击网格卡片即可开启网页检索与智能思辨。
+  <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 py-3 text-center text-neutral-300 w-full">
+    <div class="text-[11px] font-bold text-accent">AI_CHAT</div>
+    <div class="text-[9px] text-neutral-500 mt-1 leading-relaxed max-w-[220px]">
+      Chat node ready. Click card to open.
     </div>
   </div>
 
   <!-- Full Mode -->
-  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-mono text-cream">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-neutral-500">[ CHAT ]</span>
-      <span class="text-[10px] bg-base border border-line text-accent px-2.5 py-0.5 rounded font-mono">
-        {{ apiKey ? `DeepSeek: ${apiModel}` : '免费思辨路线' }}
+  <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-mono text-neutral-300">
+    <!-- Header Controls -->
+    <div class="flex items-center justify-end border-b border-line pb-2.5">
+      <span class="text-[10px] bg-surface border border-line text-accent px-2.5 py-0.5 font-mono">
+        {{ chatNodeStatus }}
       </span>
     </div>
 
-    <!-- Layout: Session sidebar + Chat workspace -->
+    <!-- Layout -->
     <div class="flex flex-col lg:flex-row gap-5 min-h-[460px]">
-      <!-- Left sidebar: Session lists -->
-      <div class="w-full lg:w-[200px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-[#d4af37]/20 pb-3 lg:pb-0 lg:pr-3.5 gap-2">
-        <button 
+      <!-- Left: Sessions -->
+      <div class="w-full lg:w-[200px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-line pb-3 lg:pb-0 lg:pr-3.5 gap-2">
+        <button
           @click="createNewSession"
-          class="w-full text-center border border-[#d4af37]/45 text-accent hover:bg-[#d4af37]/10 py-1.5 rounded text-xs cursor-pointer font-bold transition-all"
+          class="w-full text-center border border-line text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 py-1.5 text-xs cursor-pointer font-bold transition-none"
         >
-          ➕ 开启新论题
+          [ + MOUNT ]
         </button>
 
         <div class="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible max-h-[120px] lg:max-h-[380px] pr-0.5 mt-1">
-          <div 
+          <div
             v-for="sess in sessions"
             :key="sess.id"
             @click="activeSessionId = sess.id; scrollToBottom()"
-            class="flex items-center justify-between w-[130px] lg:w-full px-2.5 py-1.8 rounded border text-[11px] cursor-pointer transition-all shrink-0"
-            :class="[activeSessionId === sess.id ? 'bg-[#6e5020]/45 border-[#d4af37] text-gold' : 'border-[#d4af37]/15 text-neutral-500/50 hover:bg-[#1a1613] hover:text-neutral-500']"
+            class="flex items-center justify-between w-[130px] lg:w-full px-2.5 py-1.5 border text-[11px] cursor-pointer transition-none shrink-0"
+            :class="[activeSessionId === sess.id ? 'bg-accent/10 border-accent text-accent' : 'border-line text-neutral-500 hover:bg-surface hover:text-neutral-300']"
           >
             <span class="truncate select-none max-w-[95px] lg:max-w-[130px] font-bold">{{ sess.title }}</span>
-            <button 
+            <button
               @click.stop="deleteSession(sess.id)"
-              class="text-neutral-500/40 hover:text-status-bad text-[9px] cursor-pointer pl-1 bg-transparent border-0 outline-none"
-              title="抹去探讨"
+              class="text-neutral-500 hover:text-accent text-[9px] cursor-pointer pl-1 bg-transparent border-0 outline-none font-bold"
+              title="[ DESTROY ]"
             >
               ×
             </button>
@@ -262,54 +359,53 @@ async function sendMessage() {
         </div>
       </div>
 
-      <!-- Right Chat workspace -->
+      <!-- Right: Chat -->
       <div class="flex-grow flex flex-col gap-3">
-        <!-- Chat log container -->
-        <div 
+        <div
           ref="chatContainer"
-          class="bg-base border border-[#d4af37]/25 p-3 rounded h-[380px] lg:h-[420px] overflow-y-auto flex flex-col gap-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] font-mono"
+          class="bg-base border border-line p-3 h-[380px] lg:h-[420px] overflow-y-auto flex flex-col gap-3 font-mono"
         >
-          <div 
-            v-for="(msg, idx) in activeSession.messages" 
+          <div
+            v-for="(msg, idx) in activeSession.messages"
             :key="idx"
             class="flex flex-col text-xs md:text-sm mb-1"
           >
-            <span 
+            <span
               class="font-semibold mb-1 select-none font-mono tracking-widest text-[9px] md:text-xs"
-              :class="[msg.role === 'user' ? 'text-accent/75 text-right' : 'text-neutral-500/60']"
+              :class="[msg.role === 'user' ? 'text-dim' : 'text-accent']"
             >
-              {{ msg.role === 'user' ? '// 探讨提出者 Q.' : '// 贤者释义 A.' }}
+              {{ msg.role === 'user' ? '> QUERY' : '> RESPONSE' }}
             </span>
-            <div 
-              class="p-3 rounded-lg border border-[#d4af37]/15 whitespace-pre-wrap select-text leading-relaxed text-[#f5f2eb] max-w-[85%] sm:max-w-[80%]"
+            <div
+              class="p-3 whitespace-pre-wrap select-text leading-relaxed text-neutral-300 max-w-[85%] sm:max-w-[80%] border border-line"
               :class="[
-                msg.role === 'user' 
-                  ? 'bg-chat-user self-end rounded-tr-none border-line' 
-                  : 'bg-chat-ai self-start rounded-tl-none border-gold/10'
+                msg.role === 'user'
+                  ? 'bg-surface self-end'
+                  : 'bg-chat-ai self-start'
               ]"
             >
               {{ msg.content }}
             </div>
           </div>
-          <div v-if="loading" class="text-xs text-accent/60 animate-pulse font-mono italic py-1">
-            贤者正在计算万物的秩序...
+          <div v-if="loading" class="text-xs text-accent font-mono py-1 cursor-blink-accent">
+            AWAITING_RESPONSE...
           </div>
         </div>
 
-        <!-- Input group -->
-        <div class="flex border border-[#d4af37]/45 rounded bg-base overflow-hidden text-xs md:text-sm">
-          <input 
-            v-model="inputMsg" 
-            type="text" 
+        <!-- Input -->
+        <div class="flex border border-line bg-base overflow-hidden text-xs md:text-sm">
+          <input
+            v-model="inputMsg"
+            type="text"
             @keydown.enter="sendMessage"
-            placeholder="与贤者思辨天理..." 
-            class="w-full px-3 py-2.5 outline-none text-[#f5f2eb] bg-transparent placeholder-placeholder font-mono"
+            placeholder="QUERY_STRING..."
+            class="w-full px-3 py-2.5 outline-none text-neutral-300 bg-transparent placeholder-neutral-600 font-mono"
           />
-          <button 
+          <button
             @click="sendMessage"
-            class="bg-btn-base border-l border-[#d4af37]/45 text-neutral-500 hover:text-accent hover:bg-btn-hover px-5 font-bold flex items-center justify-center cursor-pointer transition-colors font-mono"
+            class="bg-btn-base border-l border-line text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 px-5 font-bold flex items-center justify-center cursor-pointer transition-none font-mono"
           >
-            思辨
+            EXEC
           </button>
         </div>
       </div>

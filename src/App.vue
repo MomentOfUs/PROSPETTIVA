@@ -30,6 +30,7 @@ import { useNavData } from './composables/useNavData'
 import { useCloudSync } from './composables/useCloudSync'
 import { useCanvasAnimation } from './composables/useCanvasAnimation'
 import { isLoggedIn } from './utils/api'
+import { useI18n, t } from './i18n'
 
 const GithubIcon = () => h('svg', {
   viewBox: '0 0 24 24',
@@ -68,12 +69,12 @@ const iconMap: Record<string, any> = {
 const getIconComponent = (iconName: string) => iconMap[iconName] || LinkIcon
 
 const colorOptions = [
-  { label: '黑', value: '#0a0a0a' },
-  { label: '深灰', value: '#1a1a1a' },
-  { label: '炭', value: '#262626' },
-  { label: '暗', value: '#111111' },
-  { label: '墨', value: '#0d0d0d' },
-  { label: '石', value: '#1f1f1f' }
+  { label: 'BLACK', value: '#0a0a0a' },
+  { label: 'DARK', value: '#1a1a1a' },
+  { label: 'CHARCOAL', value: '#262626' },
+  { label: 'DIM', value: '#111111' },
+  { label: 'INK', value: '#0d0d0d' },
+  { label: 'STONE', value: '#1f1f1f' }
 ]
 
 const { 
@@ -82,6 +83,7 @@ const {
   deleteGroup, exportData, importData 
 } = useNavData()
 
+const { locale, toggleLocale } = useI18n()
 const showWidgetModal = ref(false)
 const openedWidget = ref<any>(null)
 const faviconErrors = ref<Record<string, boolean>>({})
@@ -90,6 +92,24 @@ function handleFaviconError(itemId: string) { faviconErrors.value[itemId] = true
 
 function hasChinese(text: string): boolean {
   return /[一-鿿㐀-䶿]/.test(text)
+}
+
+function getItemTitle(item: any): string {
+  if (item.url && item.url.startsWith('#widget:')) {
+    const widgetId = item.url.replace('#widget:', '')
+    const translated = t('widget.' + widgetId)
+    return translated.startsWith('widget.') ? item.title : translated
+  }
+  return item.title
+}
+
+function getWidgetModalTitle(widget: any): string {
+  if (!widget) return ''
+  const translated = t('widget.' + widget.id)
+  if (translated && !translated.startsWith('widget.')) {
+    return translated.replace(/[\[\]]/g, '').trim()
+  }
+  return widget.name
 }
 
 // Compute a lighter tint from a hex color (keeps same hue, raises lightness)
@@ -118,6 +138,22 @@ function getFaviconUrl(urlStr: string): string {
       return `https://www.google.com/s2/favicons?sz=128&domain=${url.hostname}`
     } catch { return '' }
   }
+}
+
+const accentThemesList = [
+  { id: 'orange', name: 'AMBER', color: '#FF5F1F', dim: 'rgba(255, 95, 31, 0.2)' },
+  { id: 'green', name: 'GEEK', color: '#00FF66', dim: 'rgba(0, 255, 102, 0.2)' },
+  { id: 'yellow', name: 'RETRO', color: '#FFB300', dim: 'rgba(255, 179, 0, 0.2)' },
+  { id: 'blue', name: 'ICE', color: '#00E5FF', dim: 'rgba(0, 229, 255, 0.2)' },
+  { id: 'purple', name: 'EVA', color: '#D500F9', dim: 'rgba(213, 0, 249, 0.2)' }
+]
+
+function applyAccentTheme(themeId: string) {
+  const theme = accentThemesList.find(t => t.id === themeId) || accentThemesList[0]
+  const root = document.documentElement
+  root.style.setProperty('--color-accent', theme.color)
+  root.style.setProperty('--color-accent-dim', theme.dim)
+  root.style.setProperty('--color-line-accent', theme.color)
 }
 
 const activeGroupId = ref<string>('')
@@ -223,12 +259,12 @@ function handleDropOnPage(pageIndex: number, e: DragEvent) {
 }
 
 function handleAddCategory() {
-  const title = prompt('请输入新分类的名称：')
+  const title = prompt(t('prompt.new_category'))
   if (title && title.trim()) addGroup(title.trim())
 }
 
 function handleRenameCategory(group: any) {
-  const newTitle = prompt('重命名分类为：', group.title)
+  const newTitle = prompt(t('prompt.rename_to'), group.title)
   if (newTitle && newTitle.trim()) updateGroup(group.id, newTitle.trim())
 }
 
@@ -267,7 +303,7 @@ function handleItemClick(item: any, e: MouseEvent) {
 
 function handleDeleteItem(item: any) {
   const isWidget = isWidgetItem(item)
-  const confirmMsg = isWidget ? `[ DESTROY ] "${item.title}" ?` : `[ DESTROY ] "${item.title}" ?`
+  const confirmMsg = `${t('confirm.destroy_item')} "${getItemTitle(item)}" ?`
   if (confirm(confirmMsg)) {
     if (isWidget) { const widgetId = getWidgetIdFromUrl(item.url); config.value.widgets[widgetId] = false }
     else { deleteNavItem(item.id) }
@@ -294,7 +330,7 @@ const itemForm = ref({
 const importFileRef = ref<HTMLInputElement | null>(null)
 
 function ensureGroup(): string {
-  if (groups.value.length === 0) addGroup('我的导航')
+  if (groups.value.length === 0) addGroup('NAV_ROOT')
   return groups.value[0]?.id || 'g1'
 }
 
@@ -324,14 +360,24 @@ async function handleImport(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-  try { await importData(file); alert('[OK] IMPORT_COMPLETE'); location.reload() }
-  catch (err: any) { alert('[ERROR] IMPORT_FAIL: ' + (err.message || 'PARSE_ERROR')) }
+  try { await importData(file); alert('[OK] ' + t('alert.import_complete')); location.reload() }
+  catch (err: any) { alert('[ERROR] ' + t('alert.parse_fail') + ': ' + (err.message || '')) }
   finally { target.value = '' }
 }
 
 onMounted(async () => {
   loadFromStorage(); setupPersistence(); setupAuthListener()
   window.addEventListener('artisan-request-cloud-push', queueCloudPush)
+  window.addEventListener('manga-widgets-layout-updated', loadFromStorage)
+  
+  // Apply initial accent theme
+  applyAccentTheme(config.value.accentColor || 'orange')
+  
+  // Watch accentColor and apply it dynamically
+  watch(() => config.value.accentColor, (newVal) => {
+    applyAccentTheme(newVal || 'orange')
+  }, { immediate: true })
+
   if (isLoggedIn()) await pullCloudData(true)
   isAppLoading.value = false; initCanvas()
 })
@@ -339,6 +385,7 @@ onMounted(async () => {
 onUnmounted(() => {
   destroyCanvas()
   window.removeEventListener('artisan-request-cloud-push', queueCloudPush)
+  window.removeEventListener('manga-widgets-layout-updated', loadFromStorage)
 })
 </script>
 
@@ -348,14 +395,14 @@ onUnmounted(() => {
     <!-- Loading Screen -->
     <div v-if="isAppLoading" class="fixed inset-0 z-[9999] bg-base flex flex-col items-center justify-center">
       <div class="border border-accent bg-base px-8 py-6 flex flex-col items-center gap-4" style="min-width:320px">
-        <div class="text-[10px] text-neutral-600 tracking-widest mb-1">SYSTEM BOOT</div>
+        <div class="text-[10px] text-neutral-600 tracking-widest mb-1">{{ $t('system.boot') }}</div>
         <h1 class="text-xl font-bold tracking-[0.25em] text-accent select-none uppercase">
           {{ config.logoText || 'DASHBOARD' }}
         </h1>
         <div class="w-full border-t border-line"></div>
         <div class="flex items-center gap-2">
           <span class="inline-block w-2 h-2 bg-accent cursor-blink-accent"></span>
-          <p class="text-[11px] text-accent tracking-[0.2em]">INITIALIZING...</p>
+          <p class="text-[11px] text-accent tracking-[0.2em]">{{ $t('system.initializing') }}</p>
         </div>
         <div class="text-[9px] text-neutral-700 tracking-widest">PLEASE_WAIT &gt;&gt;</div>
       </div>
@@ -365,11 +412,11 @@ onUnmounted(() => {
     <canvas ref="bgCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-10"></canvas>
 
     <!-- Header -->
-    <header class="border-b-2 border-line relative z-20 bg-[#0a0a0a]">
+    <header class="border-b border-line relative z-20 bg-surface">
       <!-- Top strip -->
       <div class="border-b border-line px-4 py-1 flex items-center gap-3">
-        <span class="text-[9px] text-accent tracking-widest">❯ DASHBOARD://HOME</span>
-        <span class="text-[9px] text-neutral-500 tracking-widest hidden sm:inline">PID:01 | MEM:OK | NET:UP</span>
+        <span class="text-[9px] text-accent tracking-widest">{{ $t('dashboard.home') }}</span>
+        <span class="text-[9px] text-neutral-500 tracking-widest hidden sm:inline">{{ $t('pid.mem.net') }}</span>
         <div class="ml-auto flex items-center gap-4">
           <span class="text-[9px] text-neutral-500 tracking-widest hidden md:inline">{{ new Date().toISOString().replace('T',' ').slice(0,19) }}</span>
           <div class="flex gap-1.5">
@@ -391,17 +438,25 @@ onUnmounted(() => {
         <!-- Cloud Sync Button -->
         <button
           @click="showAuthModal = true"
-          class="border border-line bg-[#111] text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 px-3 py-1.5 text-[10px] font-bold tracking-widest cursor-pointer transition-none flex items-center gap-1.5 glitch-on-click"
-          :title="isUserLoggedIn ? 'SYNC:CONNECTED — ' + loggedInUser : 'SYNC:OFFLINE'"
+          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 px-3 py-1.5 text-[10px] font-bold tracking-widest cursor-pointer transition-none flex items-center gap-1.5 glitch-on-click"
+          :title="isUserLoggedIn ? $t('sync.connected') + ' — ' + loggedInUser : $t('sync.offline')"
         >
           <span class="w-1.5 h-1.5 inline-block" :class="isUserLoggedIn ? 'bg-white' : 'bg-neutral-700'"></span>
-          <span>{{ isUserLoggedIn ? loggedInUser.toUpperCase() : 'SYNC' }}</span>
+          <span>{{ isUserLoggedIn ? loggedInUser.toUpperCase() : $t('sync') }}</span>
+        </button>
+        <!-- Language Toggle -->
+        <button
+          @click="toggleLocale"
+          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 px-2 py-1 text-[10px] font-bold tracking-widest cursor-pointer transition-none uppercase"
+          title="LANG"
+        >
+          {{ locale === 'zh' ? 'EN' : '中' }}
         </button>
         <!-- Settings Button -->
         <button
           @click="showSettings = true"
-          class="border border-line bg-[#111] text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 w-8 h-8 flex items-center justify-center cursor-pointer transition-none glitch-on-click"
-          title="SETTINGS"
+          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 w-8 h-8 flex items-center justify-center cursor-pointer transition-none glitch-on-click"
+          :title="$t('settings')"
         >
           <SettingsIcon class="w-4 h-4" />
         </button>
@@ -418,9 +473,9 @@ onUnmounted(() => {
 
       <!-- Empty State -->
       <div v-if="items.length === 0" class="text-center py-12 border border-dashed border-line p-6">
-        <p class="text-sm mb-4 text-neutral-400">// EMPTY_GRID //</p>
+        <p class="text-sm mb-4 text-neutral-400">{{ $t('empty.grid') }}</p>
         <MangaButton @click="openAddItem(groups[0]?.id || 'g1')">
-          <PlusIcon class="w-4 h-4" /> [ + MOUNT ]
+          <PlusIcon class="w-4 h-4" /> {{ $t('countdown.add') }}
         </MangaButton>
       </div>
 
@@ -433,12 +488,30 @@ onUnmounted(() => {
       <Transition name="slide-drawer">
         <aside
           v-if="showCategorySidebar"
-          class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[#0d0d0d] border-r-2 border-accent p-5 z-[90] flex flex-col gap-4 select-none"
+          class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-surface border-r border-accent p-5 z-[90] flex flex-col gap-4 select-none"
         >
           <div class="flex items-center justify-between border-b border-line pb-3">
-            <span class="text-xs uppercase tracking-widest text-accent font-bold">CATEGORIES</span>
+            <span class="text-xs uppercase tracking-widest text-accent font-bold">
+              <template v-if="hasChinese($t('hitokoto.categories'))">
+                <span class="text-neutral-600 font-normal mr-1">[</span>
+                {{ $t('hitokoto.categories') }}
+                <span class="text-neutral-600 font-normal ml-1">]</span>
+              </template>
+              <template v-else>
+                {{ $t('hitokoto.categories') }}
+              </template>
+            </span>
             <div class="flex items-center gap-3">
-              <button @click="handleAddCategory" class="text-[10px] text-accent hover:text-white transition-none cursor-pointer bg-transparent border-0 outline-none font-bold">+ ADD</button>
+              <button @click="handleAddCategory" class="text-[10px] text-accent hover:text-white transition-none cursor-pointer bg-transparent border-0 outline-none font-bold">
+                <template v-if="hasChinese($t('add.category'))">
+                  <span class="text-neutral-600 font-normal mr-0.5">[</span>
+                  {{ $t('add.category') }}
+                  <span class="text-neutral-600 font-normal ml-0.5">]</span>
+                </template>
+                <template v-else>
+                  {{ $t('add.category') }}
+                </template>
+              </button>
               <button @click="showCategorySidebar = false" class="text-sm text-neutral-400 hover:text-white transition-none cursor-pointer bg-transparent border-0 outline-none font-bold">✕</button>
             </div>
           </div>
@@ -451,7 +524,16 @@ onUnmounted(() => {
               class="flex items-center justify-between px-3 py-2.5 border text-xs cursor-pointer transition-none shrink-0 w-full"
               :class="[activeGroupId === '' ? 'bg-accent/10 border-accent text-accent' : 'border-line text-neutral-400 hover:bg-surface hover:text-neutral-200']"
             >
-              <span class="truncate uppercase tracking-widest">ALL</span>
+              <span class="truncate uppercase tracking-widest">
+                <template v-if="hasChinese($t('all'))">
+                  <span class="text-neutral-600 font-normal mr-1">[</span>
+                  {{ $t('all') }}
+                  <span class="text-neutral-600 font-normal ml-1">]</span>
+                </template>
+                <template v-else>
+                  {{ $t('all') }}
+                </template>
+              </span>
               <span class="text-[10px] opacity-75">({{ items.length }})</span>
             </div>
 
@@ -463,11 +545,20 @@ onUnmounted(() => {
               class="flex items-center justify-between px-3 py-2.5 border text-xs cursor-pointer transition-none shrink-0 w-full group/tab relative"
               :class="[activeGroupId === g.id ? 'bg-accent/10 border-accent text-accent' : 'border-line text-neutral-400 hover:bg-surface hover:text-neutral-200']"
             >
-              <span class="truncate pr-4 uppercase tracking-wider">{{ g.title }}</span>
+              <span class="truncate pr-4 uppercase tracking-wider">
+                <template v-if="hasChinese(g.title)">
+                  <span class="text-neutral-600 font-normal mr-1">[</span>
+                  {{ g.title }}
+                  <span class="text-neutral-600 font-normal ml-1">]</span>
+                </template>
+                <template v-else>
+                  {{ g.title }}
+                </template>
+              </span>
               <div class="flex items-center gap-1.5">
                 <span class="text-[10px] opacity-75">({{ items.filter(i => i.groupId === g.id).length }})</span>
                 <div class="hidden group-hover/tab:flex items-center gap-1.5 ml-1">
-                  <button @click.stop="handleRenameCategory(g)" class="text-[10px] text-neutral-500 hover:text-white transition-none bg-transparent border-0 outline-none" title="重命名">✎</button>
+                    <button @click.stop="handleRenameCategory(g)" class="text-[10px] text-neutral-500 hover:text-white transition-none bg-transparent border-0 outline-none" title="RENAME">✎</button>
                   <button @click.stop="handleDeleteCategory(g.id)" class="text-[11px] text-neutral-500 hover:text-white transition-none bg-transparent border-0 outline-none font-bold" title="[ DESTROY ]">×</button>
                 </div>
               </div>
@@ -475,7 +566,7 @@ onUnmounted(() => {
           </div>
 
           <div class="border-t border-line pt-3">
-            <p class="text-[9px] text-neutral-500 leading-relaxed">// DRAG CARD TO CATEGORY TO ASSIGN</p>
+            <p class="text-[9px] text-neutral-500 leading-relaxed">{{ $t('drag.hint') }}</p>
           </div>
         </aside>
       </Transition>
@@ -490,32 +581,64 @@ onUnmounted(() => {
               @dragenter="handleSidebarDragEnter"
               @dragleave="handleSidebarDragLeave"
               @dragover.prevent
-              class="text-xs bg-surface hover:bg-neutral-200 hover:text-black border border-line hover:border-neutral-200 text-neutral-400 px-3 py-1.5 cursor-pointer transition-none flex items-center gap-1.5 font-bold uppercase tracking-widest"
+              class="text-xs bg-surface hover:bg-neutral-300 hover:text-accent border border-line hover:border-neutral-300 text-neutral-400 px-3 py-1.5 cursor-pointer transition-none flex items-center gap-1.5 font-bold uppercase tracking-widest"
             >
-              <span>CATEGORIES</span>
-              <span class="text-[10px] opacity-75 font-normal">({{ activeGroupId ? groups.find(g => g.id === activeGroupId)?.title : 'ALL' }})</span>
+              <span>
+                <template v-if="hasChinese($t('hitokoto.categories'))">
+                  <span class="text-neutral-600 font-normal mr-1">[</span>
+                  {{ $t('hitokoto.categories') }}
+                  <span class="text-neutral-600 font-normal ml-1">]</span>
+                </template>
+                <template v-else>
+                  {{ $t('hitokoto.categories') }}
+                </template>
+              </span>
+              <span class="text-[10px] opacity-75 font-normal">
+                (
+                <template v-if="activeGroupId">
+                  <template v-if="hasChinese(groups.find(g => g.id === activeGroupId)?.title || '')">
+                    <span class="text-neutral-600 font-normal mr-0.5">[</span>
+                    {{ groups.find(g => g.id === activeGroupId)?.title }}
+                    <span class="text-neutral-600 font-normal ml-0.5">]</span>
+                  </template>
+                  <template v-else>
+                    {{ groups.find(g => g.id === activeGroupId)?.title }}
+                  </template>
+                </template>
+                <template v-else>
+                  <template v-if="hasChinese($t('all'))">
+                    <span class="text-neutral-600 font-normal mr-0.5">[</span>
+                    {{ $t('all') }}
+                    <span class="text-neutral-600 font-normal ml-0.5">]</span>
+                  </template>
+                  <template v-else>
+                    {{ $t('all') }}
+                  </template>
+                </template>
+                )
+              </span>
             </button>
           </div>
           <MangaButton @click="openAddItem(activeGroupId || groups[0]?.id)" size="sm">
-            <PlusIcon class="w-3.5 h-3.5" /> [ + MOUNT ]
+            <PlusIcon class="w-3.5 h-3.5" /> {{ $t('countdown.add') }}
           </MangaButton>
         </div>
 
         <!-- Right Side Content -->
         <div class="flex flex-col gap-4">
-          <!-- Empty Grid -->
+          <!-- Empty {{ $t('bg.pattern.grid') }} -->
           <div v-if="filteredItems.length === 0" class="text-center py-16 border border-dashed border-line p-6">
-            <p class="text-sm mb-3 text-neutral-400">// EMPTY_CATEGORY //</p>
+            <p class="text-sm mb-3 text-neutral-400">{{ $t('empty.category') }}</p>
             <MangaButton @click="openAddItem(activeGroupId)" size="sm">
-              <PlusIcon class="w-3.5 h-3.5" /> [ + MOUNT ]
+              <PlusIcon class="w-3.5 h-3.5" /> {{ $t('countdown.add') }}
             </MangaButton>
           </div>
 
-          <!-- Icon Grid -->
+          <!-- Icon {{ $t('bg.pattern.grid') }} -->
           <div v-else class="flex flex-col gap-4 min-h-[220px]">
             <div
               class="grid bg-neutral-800 gap-px p-4"
-              style="grid-template-columns: repeat(auto-fill, minmax(72px, 1fr))"
+              style="grid-template-columns: repeat(auto-fill, minmax(88px, 1fr))"
             >
               <a v-for="item in paginatedItems" :key="item.id"
                 :href="isWidgetItem(item) ? 'javascript:void(0)' : item.url"
@@ -526,26 +649,31 @@ onUnmounted(() => {
                 @dragover="handleItemDragOver(item.id, $event)"
                 @drop="handleItemDrop(item.id, $event)"
                 @dragend="handleDragEnd"
-                class="flex flex-col items-center gap-1.5 group/card relative select-none w-16 sm:w-20 shrink-0 bg-surface"
-                :class="[dragOverItemId === item.id ? 'opacity-50' : '']"
-                :title="item.description || item.title"
+                class="flex flex-col items-center gap-2 group/card relative select-none bg-surface p-2.5 w-full h-full justify-between"
+                :class="[
+                  item.size === 'wide' ? 'col-span-2' : '',
+                  dragOverItemId === item.id ? 'opacity-50' : ''
+                ]"
+                :title="item.description || getItemTitle(item)"
               >
                 <!-- Edit/Delete hover buttons -->
                 <div class="absolute -top-2 -right-2 flex gap-1 z-[60] opacity-0 group-hover/card:opacity-100 transition-none">
-                  <button @click.prevent.stop="openEditItem(item)" class="bg-base border border-line p-1 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 text-neutral-500 transition-none cursor-pointer" title="[ EDIT ]">
+                  <button @click.prevent.stop="openEditItem(item)" class="bg-base border border-line p-1 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 text-neutral-500 transition-none cursor-pointer" :title="$t('countdown.edit')">
                     <EditIcon class="w-3 h-3" />
                   </button>
-                  <button @click.prevent.stop="handleDeleteItem(item)" class="bg-base border border-line p-1 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 text-neutral-500 transition-none cursor-pointer" title="[ DESTROY ]">
+                  <button @click.prevent.stop="handleDeleteItem(item)" class="bg-base border border-line p-1 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 text-neutral-500 transition-none cursor-pointer" title="[ DESTROY ]">
                     <TrashIcon class="w-3 h-3" />
                   </button>
                 </div>
 
-                <!-- App Icon Tile -->
                 <div
-                  class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center transition-none group-hover/card:bg-neutral-200 group-hover/card:scale-110 active:scale-95 cursor-grab active:cursor-grabbing overflow-hidden"
+                  class="flex items-center justify-center transition-none group-hover/card:border-accent active:scale-95 cursor-grab active:cursor-grabbing overflow-hidden border border-line shrink-0"
+                  :class="[
+                    item.size === 'wide' ? 'w-full h-16 sm:h-20' : 'w-16 h-16 sm:w-20 sm:h-20'
+                  ]"
                   :style="{ backgroundColor: item.color }"
                 >
-                  <div v-if="isWidgetItem(item) || (item.icon !== 'Link' && item.icon !== 'Letter')" class="group-hover/card:text-black transition-none flex items-center justify-center"
+                  <div v-if="isWidgetItem(item) || (item.icon !== 'Link' && item.icon !== 'Letter')" class="group-hover/card:text-accent transition-none flex items-center justify-center"
                     :style="{ color: getIconColor(item.color) }">
                     <component :is="getIconComponent(item.icon)" class="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
@@ -556,30 +684,35 @@ onUnmounted(() => {
                       class="w-8 h-8 sm:w-10 sm:h-10 object-contain transition-none"
                       alt=""
                     />
-                    <div v-else class="group-hover/card:text-black text-2xl sm:text-3xl font-black tracking-tighter select-none"
+                    <div v-else class="group-hover/card:text-accent text-2xl sm:text-3xl font-black tracking-tighter select-none"
                       :style="{ color: getIconColor(item.color) }">
-                      {{ item.title.trim().charAt(0).toUpperCase() }}
+                      {{ getItemTitle(item).trim().charAt(0).toUpperCase() }}
                     </div>
                   </div>
                   <div v-else-if="item.icon === 'Letter'" class="w-full h-full flex items-center justify-center p-3 sm:p-4">
-                    <div class="group-hover/card:text-black text-2xl sm:text-3xl font-black tracking-tighter select-none"
+                    <div class="group-hover/card:text-accent text-2xl sm:text-3xl font-black tracking-tighter select-none"
                       :style="{ color: getIconColor(item.color) }">
-                      {{ item.title.trim().charAt(0).toUpperCase() }}
+                      {{ getItemTitle(item).trim().charAt(0).toUpperCase() }}
                     </div>
                   </div>
                 </div>
 
                 <!-- Label -->
-                <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-400 group-hover/card:text-black transition-none truncate max-w-[80px] sm:max-w-[100px] uppercase flex items-center gap-0">
-                  <span v-if="hasChinese(item.title)" class="text-neutral-600 group-hover/card:text-black">[</span>
-                  <span class="truncate">{{ item.title }}</span>
-                  <span v-if="hasChinese(item.title)" class="text-neutral-600 group-hover/card:text-black">]</span>
+                <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-400 group-hover/card:text-accent transition-none truncate max-w-full block uppercase mt-1">
+                  <template v-if="isWidgetItem(item) || hasChinese(getItemTitle(item))">
+                    <span class="text-neutral-600 group-hover/card:text-accent font-normal mr-0.5">[</span>
+                    {{ getItemTitle(item) }}
+                    <span class="text-neutral-600 group-hover/card:text-accent font-normal ml-0.5">]</span>
+                  </template>
+                  <template v-else>
+                    {{ getItemTitle(item) }}
+                  </template>
                 </span>
 
                 <!-- Hover Tooltip -->
                 <div
                   class="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 z-[9999]
-                         opacity-0 origin-bottom bg-[#141414] border-2 border-[#3a3a3a] p-3
+                         opacity-0 origin-bottom bg-surface border border-line p-3
                          group-hover/card:opacity-100 group-hover/card:pointer-events-auto
                          group-focus-within/card:opacity-100 group-focus-within/card:pointer-events-auto"
                   :class="[isWidgetItem(item) ? 'w-72' : 'w-52']"
@@ -587,32 +720,32 @@ onUnmounted(() => {
                   <div class="relative">
                     <div v-if="isWidgetItem(item)" class="flex flex-col gap-2">
                       <div class="flex items-center gap-2 border-b border-line pb-1.5 mb-1">
-                        <div class="border border-line bg-[#0a0a0a] p-1 flex items-center justify-center text-accent shrink-0">
+                        <div class="border border-line bg-base p-1 flex items-center justify-center text-accent shrink-0">
                           <component :is="getIconComponent(item.icon)" class="w-3.5 h-3.5" />
                         </div>
-                        <h3 class="text-xs font-bold tracking-wider text-neutral-200 uppercase">{{ item.title }}</h3>
+                        <h3 class="text-xs font-bold tracking-wider text-neutral-200 uppercase">{{ getItemTitle(item) }}</h3>
                       </div>
                       <component :is="availableWidgets.find(w => w.id === getWidgetIdFromUrl(item.url))?.component" :preview="true" />
-                      <div class="text-[8px] text-neutral-500 border-t border-line pt-1.5 text-center mt-1 uppercase tracking-widest">CLICK TO OPEN</div>
+                      <div class="text-[8px] text-neutral-500 border-t border-line pt-1.5 text-center mt-1 uppercase tracking-widest">{{ $t('click.to.open') }}</div>
                     </div>
                     <div v-else>
                       <div class="flex items-center gap-2">
-                        <div class="border border-line bg-[#0a0a0a] p-1 flex items-center justify-center text-accent shrink-0 overflow-hidden w-6 h-6">
+                        <div class="border border-line bg-base p-1 flex items-center justify-center text-accent shrink-0 overflow-hidden w-6 h-6">
                           <component v-if="item.icon !== 'Link' && item.icon !== 'Letter'" :is="getIconComponent(item.icon)" class="w-3.5 h-3.5" />
                           <img v-else-if="item.icon === 'Link' && getFaviconUrl(item.url) && !faviconErrors[item.id]"
                             :src="getFaviconUrl(item.url)" @error="handleFaviconError(item.id)" class="w-3.5 h-3.5 object-contain" alt="" />
-                          <span v-else class="text-neutral-300 text-[10px] font-black select-none leading-none">{{ item.title.trim().charAt(0).toUpperCase() }}</span>
+                          <span v-else class="text-neutral-300 text-[10px] font-black select-none leading-none">{{ getItemTitle(item).trim().charAt(0).toUpperCase() }}</span>
                         </div>
-                        <h3 class="text-xs font-bold tracking-wider text-neutral-200 uppercase">{{ item.title }}</h3>
+                        <h3 class="text-xs font-bold tracking-wider text-neutral-200 uppercase">{{ getItemTitle(item) }}</h3>
                       </div>
-                      <p class="text-[9px] text-neutral-400 line-clamp-2 mt-1.5 leading-relaxed">{{ item.description || '// NO_DESC //' }}</p>
+                      <p class="text-[9px] text-neutral-400 line-clamp-2 mt-1.5 leading-relaxed">{{ item.description || $t('no.desc') }}</p>
                       <div class="flex items-center gap-1 mt-1.5 text-[8px] text-neutral-500 border-t border-line pt-1.5">
                         <ExternalLinkIcon class="w-2 h-2 text-accent shrink-0" />
                         <span class="truncate">{{ item.url.replace(/^https?:\/\//i, '') }}</span>
                       </div>
                     </div>
                   </div>
-                  <div class="absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-b-2 border-r-2 border-[#3a3a3a] bg-[#141414]"></div>
+                  <div class="absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-b border-r border-line bg-surface"></div>
                 </div>
               </a>
             </div>
@@ -620,20 +753,22 @@ onUnmounted(() => {
             <!-- Quick Add Tile -->
             <div v-if="paginatedItems.length < pageSize"
               @click="openAddItem(activeGroupId || groups[0]?.id)"
-              class="flex flex-col items-center gap-1.5 group/card cursor-pointer select-none"
+              class="flex flex-col items-center gap-2 group/card cursor-pointer select-none bg-surface p-2.5 w-full h-full justify-between"
             >
-              <div class="w-16 h-16 sm:w-20 sm:h-20 border-2 border-dashed border-line flex items-center justify-center bg-surface hover:bg-neutral-200 transition-none">
-                <PlusIcon class="w-6 h-6 sm:w-8 sm:h-8 text-neutral-600 group-hover/card:text-black" />
+              <div class="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line flex items-center justify-center bg-surface hover:bg-neutral-300/10 transition-none shrink-0">
+                <PlusIcon class="w-6 h-6 sm:w-8 sm:h-8 text-neutral-600 group-hover/card:text-accent" />
               </div>
-              <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-500 group-hover/card:text-black transition-none uppercase">ADD</span>
+              <span class="text-[10px] sm:text-xs font-bold tracking-wide text-center text-neutral-500 group-hover/card:text-accent transition-none truncate max-w-full block uppercase mt-1">
+                {{ $t('add.tile') }}
+              </span>
             </div>
           </div>
 
           <!-- Page Pagination -->
           <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 border-t border-border-dim pt-4 mt-2 select-none">
             <button @click="currentPage = Math.max(0, currentPage - 1)" :disabled="currentPage === 0"
-              class="text-xs bg-transparent border-0 text-neutral-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold transition-none uppercase tracking-widest">
-              ◀ PREV
+              class="text-xs bg-transparent border-0 text-neutral-500 hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold transition-none uppercase tracking-widest">
+              {{ $t('prev') }}
             </button>
             <div class="flex gap-2">
               <button v-for="p in totalPages" :key="p"
@@ -643,13 +778,13 @@ onUnmounted(() => {
                 @dragleave="handlePageDragLeave"
                 @drop="handleDropOnPage(p - 1, $event)"
                 class="w-3 h-3 border border-line cursor-pointer transition-none"
-                :class="[currentPage === p - 1 ? 'bg-accent border-accent' : 'bg-transparent hover:bg-neutral-200 hover:border-neutral-200']"
+                :class="[currentPage === p - 1 ? 'bg-accent border-accent' : 'bg-transparent hover:bg-neutral-300 hover:border-neutral-300']"
                 :title="`Page ${p}`"
               ></button>
             </div>
             <button @click="currentPage = Math.min(totalPages - 1, currentPage + 1)" :disabled="currentPage === totalPages - 1"
-              class="text-xs bg-transparent border-0 text-neutral-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold transition-none uppercase tracking-widest">
-              NEXT ▶
+              class="text-xs bg-transparent border-0 text-neutral-500 hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold transition-none uppercase tracking-widest">
+              {{ $t('next') }}
             </button>
           </div>
         </div>
@@ -657,57 +792,74 @@ onUnmounted(() => {
     </main>
 
     <!-- Widget Modal -->
-    <MangaModal :show="showWidgetModal" @update:show="showWidgetModal = $event" :title="openedWidget ? openedWidget.name : ''" :max-width-class="getWidgetModalWidth(openedWidget?.id)">
+    <MangaModal :show="showWidgetModal" @update:show="showWidgetModal = $event" :title="openedWidget ? getWidgetModalTitle(openedWidget) : ''" :max-width-class="getWidgetModalWidth(openedWidget?.id)">
       <component v-if="openedWidget && openedWidget.component" :is="openedWidget.component" />
     </MangaModal>
 
     <!-- Footer -->
     <footer class="text-center mt-24 text-xs text-neutral-700 select-none tracking-widest uppercase">
-      <p>DASHBOARD © 2026</p>
+      <p>{{ $t('system.copyright') }}</p>
     </footer>
 
     <!-- Settings Modal -->
-    <MangaModal v-model:show="showSettings" title="SYSTEM CONFIG" max-width-class="max-w-2xl">
+    <MangaModal v-model:show="showSettings" :title="$t('sys.config')" max-width-class="max-w-2xl">
       <div class="flex flex-col gap-5 text-sm">
         <!-- Logo Text -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest">LOGO TEXT</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('logo.text') }}</label>
           <input v-model="config.logoText" type="text"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none" />
         </div>
 
         <!-- Pattern selector -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest">BACKGROUND PATTERN</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('bg.pattern') }}</label>
           <select v-model="config.backgroundPattern"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none">
-            <option value="dots">Dots</option>
-            <option value="grid">Grid</option>
-            <option value="none">None</option>
+            <option value="dots">{{ $t('bg.pattern.dots') }}</option>
+            <option value="grid">{{ $t('bg.pattern.grid') }}</option>
+            <option value="none">{{ $t('bg.pattern.none') }}</option>
           </select>
+        </div>
+
+        <!-- Accent Theme swapper -->
+        <div class="flex flex-col gap-2 border-b border-line pb-4">
+          <label class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('accent.theme') }}</label>
+          <div class="grid grid-cols-5 gap-2">
+            <button
+              v-for="theme in accentThemesList"
+              :key="theme.id"
+              @click="config.accentColor = theme.id"
+              class="border text-center py-2 text-[10px] font-bold cursor-pointer transition-none flex flex-col items-center gap-1.5 bg-transparent"
+              :class="config.accentColor === theme.id ? 'bg-accent/15 border-accent text-accent' : 'border-line text-neutral-400 hover:bg-neutral-300/10 hover:text-neutral-300'"
+            >
+              <span class="w-3.5 h-3.5 border border-line" :style="{ backgroundColor: theme.color }"></span>
+              <span class="font-mono">{{ $t('accent.' + theme.id) }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- Font toggle -->
         <div class="flex justify-between items-center border-b border-line pb-4">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest">MONOSPACE ENFORCED</span>
-          <span class="text-xs text-accent">ALWAYS ON</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('monospace.enforced') }}</span>
+          <span class="text-xs text-accent">{{ $t('always.on') }}</span>
         </div>
 
-        <!-- Grid Layout -->
+        <!-- {{ $t('bg.pattern.grid') }} Layout -->
         <div class="flex flex-col gap-3 border-b border-line pb-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-neutral-500 uppercase tracking-widest">ICON GRID</span>
-            <span class="text-[10px] text-neutral-600">{{ config.gridRows * 12 }} ITEMS/PAGE</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('icon.grid') }}</span>
+            <span class="text-[10px] text-neutral-600">{{ config.gridRows * 12 }} {{ $t('items.page') }}</span>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-2">
-              <label class="text-[10px] text-neutral-600 uppercase tracking-widest">ROWS ({{ config.gridRows }})</label>
+              <label class="text-[10px] text-neutral-600 uppercase tracking-widest">{{ $t('rows') }} ({{ config.gridRows }})</label>
               <div class="flex items-center gap-2">
                 <button @click="config.gridRows = Math.max(1, config.gridRows - 1)"
-                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">−</button>
+                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">−</button>
                 <div class="flex-1 text-center text-sm border border-line py-1 bg-base text-neutral-300">{{ config.gridRows }}</div>
                 <button @click="config.gridRows = Math.min(12, config.gridRows + 1)"
-                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">+</button>
+                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">+</button>
               </div>
               <input type="range" min="1" max="12" v-model.number="config.gridRows" class="w-full accent-[#FF5F1F] cursor-pointer" />
             </div>
@@ -715,10 +867,10 @@ onUnmounted(() => {
               <label class="text-[10px] text-neutral-600 uppercase tracking-widest">COLS ({{ config.gridCols }}) — auto-fill on mobile</label>
               <div class="flex items-center gap-2">
                 <button @click="config.gridCols = Math.max(2, config.gridCols - 1)"
-                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">−</button>
+                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">−</button>
                 <div class="flex-1 text-center text-sm border border-line py-1 bg-base text-neutral-300">{{ config.gridCols }}</div>
                 <button @click="config.gridCols = Math.min(16, config.gridCols + 1)"
-                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">+</button>
+                  class="w-7 h-7 border border-line text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 bg-transparent cursor-pointer transition-none flex items-center justify-center font-bold text-sm">+</button>
               </div>
               <input type="range" min="2" max="16" v-model.number="config.gridCols" class="w-full accent-[#FF5F1F] cursor-pointer" />
             </div>
@@ -727,11 +879,11 @@ onUnmounted(() => {
 
         <!-- Widget controls -->
         <div class="flex flex-col gap-3">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest">WIDGETS</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('widgets') }}</span>
           <div class="grid grid-cols-2 gap-3">
             <div v-for="widget in availableWidgets" :key="widget.id"
               class="border border-line p-2.5 bg-surface flex items-center justify-between text-neutral-300">
-              <span class="text-xs">{{ widget.name }}</span>
+              <span class="text-xs">{{ $t('widget.' + widget.id) }}</span>
               <input type="checkbox" v-model="config.widgets[widget.id]" class="accent-[#FF5F1F] w-4 h-4 cursor-pointer" />
             </div>
           </div>
@@ -739,20 +891,20 @@ onUnmounted(() => {
 
         <!-- AI API Config -->
         <div class="border-t border-line pt-4 flex flex-col gap-3">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest">AI API CONFIG</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest">{{ $t('ai.api.config') }}</span>
           <div class="flex flex-col gap-2 bg-surface border border-line p-3">
             <div class="flex flex-col gap-1 text-xs">
-              <label class="text-neutral-500 uppercase tracking-widest text-[10px]">API KEY</label>
+              <label class="text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('api.key') }}</label>
               <input v-model="config.openaiKey" type="password" placeholder="sk-..."
                 class="border border-line p-1.5 bg-base text-neutral-300 font-mono outline-none focus:border-accent transition-none" />
             </div>
             <div class="flex flex-col gap-1 text-xs mt-1">
-              <label class="text-neutral-500 uppercase tracking-widest text-[10px]">API BASE URL</label>
+              <label class="text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('api.base.url') }}</label>
               <input v-model="config.openaiBase" type="text" placeholder="https://api.deepseek.com"
                 class="border border-line p-1.5 bg-base text-neutral-300 font-mono outline-none focus:border-accent transition-none" />
             </div>
             <div class="flex flex-col gap-1 text-xs mt-1">
-              <label class="text-neutral-500 uppercase tracking-widest text-[10px]">MODEL NAME</label>
+              <label class="text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('model.name') }}</label>
               <input v-model="config.openaiModel" type="text" placeholder="deepseek-chat"
                 class="border border-line p-1.5 bg-base text-neutral-300 font-mono outline-none focus:border-accent transition-none" />
             </div>
@@ -761,87 +913,87 @@ onUnmounted(() => {
 
         <!-- Backup & Restore -->
         <div class="border-t border-line pt-4 flex flex-col gap-2.5 p-3 border border-border-dim">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest mb-1 block">BACKUP & RESTORE</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest mb-1 block">{{ $t('backup.restore') }}</span>
           <div class="grid grid-cols-2 gap-3">
-            <MangaButton @click="triggerImportClick" size="sm" class="flex items-center justify-center gap-1.5">IMPORT</MangaButton>
-            <MangaButton @click="exportData" size="sm" class="flex items-center justify-center gap-1.5">EXPORT</MangaButton>
+            <MangaButton @click="triggerImportClick" size="sm" class="flex items-center justify-center gap-1.5">{{ $t('import') }}</MangaButton>
+            <MangaButton @click="exportData" size="sm" class="flex items-center justify-center gap-1.5">{{ $t('hitokoto.export') }}</MangaButton>
           </div>
           <input ref="importFileRef" type="file" accept=".json" class="hidden" @change="handleImport" />
         </div>
 
         <!-- Danger zone -->
         <div class="border-t border-line pt-4 flex justify-between gap-4">
-          <MangaButton @click="resetAll" size="sm">RESET ALL</MangaButton>
-          <MangaButton @click="showSettings = false" size="sm">[ COMMIT ]</MangaButton>
+          <MangaButton @click="resetAll" size="sm">{{ $t('reset.all') }}</MangaButton>
+          <MangaButton @click="showSettings = false" size="sm">{{ $t('commit') }}</MangaButton>
         </div>
       </div>
     </MangaModal>
 
     <!-- Cloud Sync Modal -->
-    <MangaModal v-model:show="showAuthModal" :title="isUserLoggedIn ? 'CLOUD SYNC' : 'LOGIN'">
+    <MangaModal v-model:show="showAuthModal" :title="isUserLoggedIn ? $t('cloud.sync') : $t('login')">
       <div class="flex flex-col gap-4 text-sm">
         <!-- Logged In View -->
         <div v-if="isUserLoggedIn" class="flex flex-col gap-4 py-2">
           <div class="border border-line bg-surface p-3.5 text-center flex flex-col gap-1.5">
-            <span class="text-[10px] text-neutral-600 tracking-widest uppercase">SYNC STATUS</span>
-            <p class="text-sm text-neutral-300">ACCOUNT: <span class="text-accent font-bold">{{ loggedInUser }}</span></p>
-            <p class="text-[10px] text-neutral-500 leading-relaxed mt-1">AUTO_PUSH: ENABLED</p>
+            <span class="text-[10px] text-neutral-600 tracking-widest uppercase">{{ $t('sync') }} STATUS</span>
+            <p class="text-sm text-neutral-300">{{ $t('account') }}: <span class="text-accent font-bold">{{ loggedInUser }}</span></p>
+            <p class="text-[10px] text-neutral-500 leading-relaxed mt-1">{{ $t('auto.push') }}</p>
           </div>
           <div class="grid grid-cols-2 gap-3 mt-1">
             <button @click="pullCloudData(false)" :disabled="isSyncing"
-              class="border border-line py-2 text-xs bg-base text-neutral-400 hover:bg-neutral-200 hover:text-black transition-none cursor-pointer text-center font-bold disabled:opacity-50">
-              PULL FROM CLOUD
+              class="border border-line py-2 text-xs bg-base text-neutral-400 hover:bg-neutral-300 hover:text-accent transition-none cursor-pointer text-center font-bold disabled:opacity-50">
+              {{ $t('pull.from.cloud') }}
             </button>
             <button @click="pushCloudData" :disabled="isSyncing"
-              class="border border-line py-2 text-xs bg-base text-neutral-400 hover:bg-neutral-200 hover:text-black transition-none cursor-pointer text-center font-bold disabled:opacity-50">
-              PUSH TO CLOUD
+              class="border border-line py-2 text-xs bg-base text-neutral-400 hover:bg-neutral-300 hover:text-accent transition-none cursor-pointer text-center font-bold disabled:opacity-50">
+              {{ $t('push.to.cloud') }}
             </button>
           </div>
           <p v-if="syncMessage" class="text-[9.5px] text-accent text-center font-mono mt-0.5">{{ syncMessage }}</p>
           <div class="border-t border-line pt-4 flex justify-between gap-4 mt-2">
-            <MangaButton @click="handleLogout" size="sm">AUTH_LOGOUT</MangaButton>
-            <MangaButton @click="showAuthModal = false" size="sm">[ ABORT ]</MangaButton>
+            <MangaButton @click="handleLogout" size="sm">{{ $t('logout') }}</MangaButton>
+            <MangaButton @click="showAuthModal = false" size="sm">{{ $t('countdown.abort') }}</MangaButton>
           </div>
         </div>
 
         <!-- Auth Login Form -->
         <div v-else class="flex flex-col gap-3">
           <div class="border border-line bg-surface p-3 text-center">
-            <span class="text-[10px] text-neutral-600 tracking-widest uppercase block mb-1">DEMO LOGIN</span>
-            <p class="text-xs text-neutral-400 leading-relaxed">REGISTRATION: LOCKED // DEFAULT_ACCOUNT: PRELOADED</p>
+            <span class="text-[10px] text-neutral-600 tracking-widest uppercase block mb-1">DEMO {{ $t('login') }}</span>
+            <p class="text-xs text-neutral-400 leading-relaxed">REGISTRATION: LOCKED // DEFAULT_{{ $t('account') }}: PRELOADED</p>
           </div>
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">USERNAME</label>
+            <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('username') }}</label>
             <input v-model="authForm.username" type="text" placeholder="username"
               class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none" />
           </div>
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">PASSWORD</label>
+            <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('password') }}</label>
             <input v-model="authForm.password" type="password" placeholder="password"
               class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none font-mono" />
           </div>
           <p v-if="authError" class="text-[10px] text-accent text-center tracking-wider mt-1">{{ authError }}</p>
           <p v-if="syncMessage" class="text-[9.5px] text-accent text-center font-mono mt-0.5">{{ syncMessage }}</p>
           <div class="border-t border-line pt-4 flex justify-end gap-3 mt-2">
-            <MangaButton @click="showAuthModal = false" size="sm">[ ABORT ]</MangaButton>
-            <MangaButton @click="handleAuthSubmit" :disabled="isSyncing" size="sm">AUTH_LOGIN</MangaButton>
+            <MangaButton @click="showAuthModal = false" size="sm">{{ $t('countdown.abort') }}</MangaButton>
+            <MangaButton @click="handleAuthSubmit" :disabled="isSyncing" size="sm">AUTH_{{ $t('login') }}</MangaButton>
           </div>
         </div>
       </div>
     </MangaModal>
 
     <!-- Nav Item Add/Edit Modal -->
-    <MangaModal v-model:show="showItemModal" :title="editingItem ? 'EDIT LINK' : 'ADD LINK'">
+    <MangaModal v-model:show="showItemModal" :title="editingItem ? $t('edit.link') : $t('add.link')">
       <div class="flex flex-col gap-4 text-sm">
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">GROUP</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('group') }}</label>
           <select v-model="itemForm.groupId"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none">
             <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.title }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">TITLE</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('title') }}</label>
           <input v-model="itemForm.title" type="text" placeholder="e.g. GitHub"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none" />
         </div>
@@ -850,35 +1002,35 @@ onUnmounted(() => {
           <input v-model="itemForm.url" type="text" placeholder="https://..."
             :disabled="!!(itemForm.url && itemForm.url.startsWith('#widget:'))"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none disabled:opacity-50 disabled:cursor-not-allowed" />
-          <p v-if="itemForm.url && itemForm.url.startsWith('#widget:')" class="text-[9px] text-neutral-600 mt-0.5">WIDGET COMPONENT — URL CANNOT BE CHANGED</p>
+          <p v-if="itemForm.url && itemForm.url.startsWith('#widget:')" class="text-[9px] text-neutral-600 mt-0.5">{{ $t('widget.component') }}</p>
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">DESCRIPTION</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('description') }}</label>
           <input v-model="itemForm.description" type="text" placeholder="optional description"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none" />
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">ICON</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('icon') }}</label>
           <select v-model="itemForm.icon"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none">
-            <option value="Link">AUTO (FAVICON)</option>
-            <option value="Letter">FIRST LETTER</option>
+            <option value="Link">AUTO (FAV{{ $t('icon') }})</option>
+            <option value="Letter">{{ $t('first.letter') }}</option>
             <option value="Home">HOME</option>
             <option value="Github">GITHUB</option>
             <option value="Tv">TV</option>
-            <option value="Search">SEARCH</option>
+            <option value="Search">{{ $t('widget.search') }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">SIZE</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('size') }}</label>
           <select v-model="itemForm.size"
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none">
-            <option value="normal">NORMAL</option>
-            <option value="wide">WIDE (2 COL)</option>
+            <option value="normal">{{ $t('normal') }}</option>
+            <option value="wide">{{ $t('wide') }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">BACKGROUND</label>
+          <label class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('background') }}</label>
           <div class="flex gap-2 mt-1 flex-wrap">
             <button v-for="color in colorOptions" :key="color.value"
               @click="itemForm.color = color.value"
@@ -890,8 +1042,8 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="border-t border-line pt-4 flex justify-end gap-3 mt-2">
-          <MangaButton @click="showItemModal = false" size="sm">[ ABORT ]</MangaButton>
-          <MangaButton @click="saveItem" size="sm">[ COMMIT ]</MangaButton>
+          <MangaButton @click="showItemModal = false" size="sm">{{ $t('countdown.abort') }}</MangaButton>
+          <MangaButton @click="saveItem" size="sm">{{ $t('commit') }}</MangaButton>
         </div>
       </div>
     </MangaModal>

@@ -53,6 +53,10 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
+function hasChinese(text: string): boolean {
+  return /[一-鿿㐀-䶿]/.test(text)
+}
+
 watch(() => props.show, async (val) => {
   if (val) {
     document.body.style.overflow = 'hidden'
@@ -83,24 +87,38 @@ onBeforeUnmount(() => {
     aria-modal="true"
     :aria-label="title"
   >
+    <!-- Overlay -->
+    <div
+      @click="close"
+      class="absolute inset-0 bg-black/80 z-0"
+      aria-hidden="true"
+    ></div>
+
     <!-- Modal Box -->
-    <div :class="['relative bg-[#141414] border-2 border-line p-6 w-full flex flex-col gap-4 text-neutral-200', maxWidthClass]" style="max-height: 95vh;">
+    <div :class="['relative bg-base border border-line p-6 w-full z-10 flex flex-col gap-4 text-neutral-300', maxWidthClass]" style="max-height: 95vh;">
       <!-- Header -->
       <div class="flex justify-between items-center border-b border-line pb-3">
         <h3 class="text-sm font-bold tracking-widest uppercase text-accent">
-          {{ title }}
+          <template v-if="hasChinese(title)">
+            <span class="text-neutral-600 font-normal mr-1">[</span>
+            {{ title }}
+            <span class="text-neutral-600 font-normal ml-1">]</span>
+          </template>
+          <template v-else>
+            {{ title }}
+          </template>
         </h3>
         <button
           @click="close"
-          class="border border-line bg-[#0a0a0a] text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 w-7 h-7 flex items-center justify-center font-bold transition-none cursor-pointer"
-          aria-label="关闭对话框"
+          class="border border-line bg-surface text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 w-7 h-7 flex items-center justify-center font-bold transition-none cursor-pointer"
+          aria-label="CLOSE"
         >
           ×
         </button>
       </div>
 
       <!-- Content -->
-      <div class="overflow-y-auto max-h-[80vh] py-2 text-neutral-200">
+      <div class="overflow-y-auto max-h-[80vh] py-2 text-neutral-300">
         <slot />
       </div>
 

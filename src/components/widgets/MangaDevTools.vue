@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { t } from '../../i18n'
 
 const props = withDefaults(defineProps<{
   preview?: boolean
@@ -57,13 +58,13 @@ function convertTsToDate() {
   if (!tsInput.value.trim()) return
   const val = Number(tsInput.value.trim())
   if (isNaN(val)) {
-    dateOutput.value = '无效的时间戳'
+    dateOutput.value = t('devtools.invalid_timestamp')
     return
   }
   // Detect if seconds or milliseconds
   const date = new Date(val < 10000000000 ? val * 1000 : val)
   if (isNaN(date.getTime())) {
-    dateOutput.value = '无效的时间戳'
+    dateOutput.value = t('devtools.invalid_timestamp')
   } else {
     dateOutput.value = date.toLocaleString()
   }
@@ -73,7 +74,7 @@ function convertDateToTs() {
   if (!dateInput.value.trim()) return
   const date = new Date(dateInput.value.trim().replace(/-/g, '/'))
   if (isNaN(date.getTime())) {
-    tsOutput.value = '无效的日期格式'
+    tsOutput.value = t('devtools.invalid_date')
   } else {
     tsOutput.value = String(Math.floor(date.getTime() / 1000))
   }
@@ -84,9 +85,9 @@ async function copyToClipboard(text: string) {
   if (!text) return
   try {
     await navigator.clipboard.writeText(text)
-    alert('[OK] COPIED')
+    alert('[OK] ' + t('devtools.copied'))
   } catch {
-    alert('[ERROR] COPY_FAILED')
+    alert('[ERROR] ' + t('devtools.copy_failed'))
   }
 }
 
@@ -105,7 +106,7 @@ function formatJson() {
     const parsed = JSON.parse(jsonInput.value)
     jsonOutput.value = JSON.stringify(parsed, null, 2)
   } catch (e: any) {
-    jsonError.value = 'JSON 解析失败: ' + e.message
+    jsonError.value = t('devtools.json_parse_failed') + ': ' + e.message
     jsonOutput.value = ''
   }
 }
@@ -120,7 +121,7 @@ function minifyJson() {
     const parsed = JSON.parse(jsonInput.value)
     jsonOutput.value = JSON.stringify(parsed)
   } catch (e: any) {
-    jsonError.value = 'JSON 解析失败: ' + e.message
+    jsonError.value = t('devtools.json_parse_failed') + ': ' + e.message
     jsonOutput.value = ''
   }
 }
@@ -291,7 +292,7 @@ function decodeJwt() {
     jwtHeader.value = JSON.stringify(JSON.parse(headerDecoded), null, 2)
     jwtPayload.value = JSON.stringify(JSON.parse(payloadDecoded), null, 2)
   } catch (e: any) {
-    jwtError.value = 'JWT 解析失败: ' + e.message
+    jwtError.value = t('devtools.jwt_parse_failed') + ': ' + e.message
   }
 }
 </script>
@@ -299,18 +300,15 @@ function decodeJwt() {
 <template>
   <!-- Preview Mode -->
   <div v-if="preview" class="select-none flex flex-col justify-center items-center gap-1.5 font-mono py-3 text-center text-neutral-300 w-full">
-    <div class="text-[11px] font-bold text-accent tracking-widest uppercase">DevTools</div>
+    <div class="text-[11px] font-bold text-accent tracking-widest uppercase">{{ $t('widget.devtools') }}</div>
     <div class="text-[9px] text-neutral-500 mt-1 leading-relaxed max-w-[220px]">
-      Timestamp, JSON, Base64, URL, Hash, Radix, JWT — developer utilities in one terminal.
+      {{ $t('devtools.preview_desc') }}
     </div>
   </div>
 
   <!-- Full Mode -->
   <div v-else class="w-full flex flex-col gap-4 font-mono select-none text-neutral-300">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-accent">[ DEVTOOLS ]</span>
-    </div>
+
 
     <!-- Layout: Sidebar and Main panels -->
     <div class="flex flex-col lg:flex-row gap-5 min-h-[420px]">
@@ -321,49 +319,49 @@ function decodeJwt() {
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'timestamp' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          TIMESTAMP
+          {{ $t('devtools.timestamp_tab') }}
         </button>
         <button 
           @click="activeTab = 'json'"
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'json' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          JSON
+          {{ $t('devtools.json_tab') }}
         </button>
         <button 
           @click="activeTab = 'base64'"
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'base64' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          BASE64
+          {{ $t('devtools.base64_tab') }}
         </button>
         <button 
           @click="activeTab = 'url'"
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'url' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          URL
+          {{ $t('devtools.url_tab') }}
         </button>
         <button 
           @click="activeTab = 'hash'"
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'hash' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          HASH
+          {{ $t('devtools.hash_tab') }}
         </button>
         <button 
           @click="activeTab = 'radix'"
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'radix' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          RADIX
+          {{ $t('devtools.radix_tab') }}
         </button>
         <button 
           @click="activeTab = 'jwt'"
           class="w-auto lg:w-full text-left px-3 py-2 rounded-sm text-[11px] md:text-xs cursor-pointer transition-none font-bold whitespace-nowrap uppercase tracking-widest"
           :class="[activeTab === 'jwt' ? 'bg-accent text-black border border-accent' : 'text-neutral-400 bg-surface border border-border-dim hover:text-neutral-300 hover:bg-base']"
         >
-          JWT
+          {{ $t('devtools.jwt_tab') }}
         </button>
       </div>
 
@@ -373,11 +371,11 @@ function decodeJwt() {
       <!-- TAB 1: Timestamp Converter -->
       <div v-if="activeTab === 'timestamp'" class="flex flex-col gap-3 text-xs md:text-sm max-w-xl">
         <div class="flex justify-between items-center bg-surface p-2.5 rounded-sm border border-line text-xs">
-          <span class="text-neutral-500 uppercase tracking-widest text-[10px]">TIMESTAMP (SEC)</span>
+          <span class="text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.timestamp_sec') }}</span>
           <span 
             @click="copyToClipboard(String(currentTimestamp))"
             class="font-mono text-accent hover:underline cursor-pointer"
-            title="Click to copy"
+            :title="$t('devtools.click_copy')"
           >
             {{ currentTimestamp }}
           </span>
@@ -385,47 +383,47 @@ function decodeJwt() {
 
         <!-- TS to Date -->
         <div class="flex flex-col gap-1.5 border border-line p-3 rounded-sm bg-base">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">TIMESTAMP → DATE</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.timestamp') }}</span>
           <div class="flex gap-2">
             <input 
               v-model="tsInput" 
               type="text" 
-              placeholder="timestamp..." 
+              :placeholder="$t('devtools.placeholder.timestamp')" 
               class="flex-1 border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
             <button 
               @click="convertTsToDate" 
               class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
             >
-              CONVERT
+              {{ $t('devtools.convert') }}
             </button>
           </div>
           <div v-if="dateOutput" class="flex justify-between items-center text-xs mt-1.5 font-mono text-neutral-300 bg-surface p-2 rounded-sm border border-border-dim">
             <span class="truncate">{{ dateOutput }}</span>
-            <button @click="copyToClipboard(dateOutput)" class="text-accent text-xs cursor-pointer hover:underline pl-2 shrink-0">COPY</button>
+            <button @click="copyToClipboard(dateOutput)" class="text-accent text-xs cursor-pointer hover:underline pl-2 shrink-0">{{ $t('devtools.copy') }}</button>
           </div>
         </div>
 
         <!-- Date to TS -->
         <div class="flex flex-col gap-1.5 border border-line p-3 rounded-sm bg-base">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">DATE → TIMESTAMP</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.date_to_timestamp') }}</span>
           <div class="flex gap-2">
             <input 
               v-model="dateInput" 
               type="text" 
-              placeholder="YYYY-MM-DD HH:mm:ss" 
+              :placeholder="$t('devtools.placeholder.datetime')" 
               class="flex-1 border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
             <button 
               @click="convertDateToTs" 
               class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
             >
-              CONVERT
+              {{ $t('devtools.convert') }}
             </button>
           </div>
           <div v-if="tsOutput" class="flex justify-between items-center text-xs mt-1.5 font-mono text-neutral-300 bg-surface p-2 rounded-sm border border-border-dim">
             <span class="truncate">{{ tsOutput }}</span>
-            <button @click="copyToClipboard(tsOutput)" class="text-accent text-xs cursor-pointer hover:underline pl-2 shrink-0">COPY</button>
+            <button @click="copyToClipboard(tsOutput)" class="text-accent text-xs cursor-pointer hover:underline pl-2 shrink-0">{{ $t('devtools.copy') }}</button>
           </div>
         </div>
       </div>
@@ -435,23 +433,23 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Left: Input -->
           <div class="flex flex-col gap-1.5">
-            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT JSON</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.input_json') }}</span>
             <textarea 
               v-model="jsonInput" 
-              placeholder="Paste JSON here..." 
+              :placeholder="$t('devtools.placeholder.json_input')" 
               class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent"
             ></textarea>
           </div>
           <!-- Right: Output -->
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-accent uppercase tracking-widest text-[10px]">OUTPUT</span>
-              <button v-if="jsonOutput" @click="copyToClipboard(jsonOutput)" class="text-accent hover:underline cursor-pointer">COPY</button>
+              <span class="text-accent uppercase tracking-widest text-[10px]">{{ $t('devtools.output') }}</span>
+              <button v-if="jsonOutput" @click="copyToClipboard(jsonOutput)" class="text-accent hover:underline cursor-pointer">{{ $t('devtools.copy') }}</button>
             </div>
             <textarea 
               readonly
               :value="jsonOutput" 
-              placeholder="Formatted or minified output..."
+              :placeholder="$t('devtools.placeholder.json_output')"
               class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none"
             ></textarea>
           </div>
@@ -461,19 +459,19 @@ function decodeJwt() {
             @click="formatJson" 
             class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            PRETTY
+            {{ $t('devtools.pretty') }}
           </button>
           <button 
             @click="minifyJson" 
             class="bg-surface hover:bg-base text-neutral-300 px-4 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            MINIFY
+            {{ $t('devtools.minify') }}
           </button>
           <button 
             @click="jsonInput = ''; jsonOutput = ''; jsonError = ''" 
             class="px-4 bg-transparent text-neutral-600 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs hover:bg-surface transition-none font-bold uppercase tracking-widest"
           >
-            CLEAR
+            {{ $t('devtools.clear') }}
           </button>
         </div>
         <div v-if="jsonError" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
@@ -496,13 +494,13 @@ function decodeJwt() {
           <!-- Right: Output -->
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-accent uppercase tracking-widest text-[10px]">OUTPUT</span>
-              <button v-if="b64Output" @click="copyToClipboard(b64Output)" class="text-accent hover:underline cursor-pointer">COPY</button>
+              <span class="text-accent uppercase tracking-widest text-[10px]">{{ $t('devtools.output') }}</span>
+              <button v-if="b64Output" @click="copyToClipboard(b64Output)" class="text-accent hover:underline cursor-pointer">{{ $t('devtools.copy') }}</button>
             </div>
             <textarea 
               readonly
               :value="b64Output" 
-              placeholder="Base64 encode/decode result..."
+              :placeholder="$t('devtools.placeholder.base64_output')"
               class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none"
             ></textarea>
           </div>
@@ -512,19 +510,19 @@ function decodeJwt() {
             @click="encodeBase64" 
             class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            ENCODE
+            {{ $t('devtools.encode') }}
           </button>
           <button 
             @click="decodeBase64" 
             class="bg-surface hover:bg-base text-neutral-300 px-4 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            DECODE
+            {{ $t('devtools.decode') }}
           </button>
           <button 
             @click="b64Input = ''; b64Output = ''; b64Error = ''" 
             class="px-4 bg-transparent text-neutral-600 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs hover:bg-surface transition-none font-bold uppercase tracking-widest"
           >
-            CLEAR
+            {{ $t('devtools.clear') }}
           </button>
         </div>
         <div v-if="b64Error" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
@@ -537,23 +535,23 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Left: Input -->
           <div class="flex flex-col gap-1.5">
-            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT URL TEXT</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.input_url') }}</span>
             <textarea 
               v-model="urlInput" 
-              placeholder="Paste URL or string to encode/decode..." 
+              :placeholder="$t('devtools.placeholder.url_input')" 
               class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent"
             ></textarea>
           </div>
           <!-- Right: Output -->
           <div class="flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-accent uppercase tracking-widest text-[10px]">OUTPUT</span>
-              <button v-if="urlOutput" @click="copyToClipboard(urlOutput)" class="text-accent hover:underline cursor-pointer">COPY</button>
+              <span class="text-accent uppercase tracking-widest text-[10px]">{{ $t('devtools.output') }}</span>
+              <button v-if="urlOutput" @click="copyToClipboard(urlOutput)" class="text-accent hover:underline cursor-pointer">{{ $t('devtools.copy') }}</button>
             </div>
             <textarea 
               readonly
               :value="urlOutput" 
-              placeholder="URL encode/decode result..."
+              :placeholder="$t('devtools.placeholder.url_output')"
               class="w-full h-[220px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none"
             ></textarea>
           </div>
@@ -563,19 +561,19 @@ function decodeJwt() {
             @click="encodeUrl" 
             class="bg-accent hover:bg-accent/80 text-black px-4 py-1.5 rounded-sm border border-accent cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            ENCODE
+            {{ $t('devtools.encode') }}
           </button>
           <button 
             @click="decodeUrl" 
             class="bg-surface hover:bg-base text-neutral-300 px-4 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs transition-none font-bold uppercase tracking-widest"
           >
-            DECODE
+            {{ $t('devtools.decode') }}
           </button>
           <button 
             @click="urlInput = ''; urlOutput = ''; urlError = ''" 
             class="px-4 bg-transparent text-neutral-600 py-1.5 rounded-sm border border-border-dim cursor-pointer text-xs hover:bg-surface transition-none font-bold uppercase tracking-widest"
           >
-            CLEAR
+            {{ $t('devtools.clear') }}
           </button>
         </div>
         <div v-if="urlError" class="text-accent text-xs font-mono bg-accent/5 p-2 border border-accent/20 rounded-sm break-all">
@@ -586,11 +584,11 @@ function decodeJwt() {
       <!-- TAB 5: Hash Converter -->
       <div v-if="activeTab === 'hash'" class="flex flex-col gap-3 text-xs md:text-sm">
         <div class="flex flex-col gap-1.5">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT TEXT</span>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.input_text') }}</span>
           <textarea 
             v-model="hashInput" 
             @input="calculateHash"
-            placeholder="Enter text for real-time hash calculation..." 
+            :placeholder="$t('devtools.placeholder.hash_input')" 
             class="w-full h-[80px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-xs outline-none focus:border-accent resize-y"
           ></textarea>
         </div>
@@ -600,7 +598,7 @@ function decodeJwt() {
           <div class="border border-line p-2.5 rounded-sm bg-base flex flex-col gap-1">
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400 font-mono text-[10px] uppercase tracking-widest">SHA-256</span>
-              <button v-if="sha256Output" @click="copyToClipboard(sha256Output)" class="text-accent hover:underline text-[10px] cursor-pointer">COPY</button>
+              <button v-if="sha256Output" @click="copyToClipboard(sha256Output)" class="text-accent hover:underline text-[10px] cursor-pointer">{{ $t('devtools.copy') }}</button>
             </div>
             <div class="font-mono text-neutral-300 text-[10px] bg-surface p-1.5 rounded-sm border border-border-dim break-all select-all min-h-[26px]">
               {{ sha256Output || '---' }}
@@ -611,7 +609,7 @@ function decodeJwt() {
           <div class="border border-line p-2.5 rounded-sm bg-base flex flex-col gap-1">
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400 font-mono text-[10px] uppercase tracking-widest">SHA-1</span>
-              <button v-if="sha1Output" @click="copyToClipboard(sha1Output)" class="text-accent hover:underline text-[10px] cursor-pointer">COPY</button>
+              <button v-if="sha1Output" @click="copyToClipboard(sha1Output)" class="text-accent hover:underline text-[10px] cursor-pointer">{{ $t('devtools.copy') }}</button>
             </div>
             <div class="font-mono text-neutral-300 text-[10px] bg-surface p-1.5 rounded-sm border border-border-dim break-all select-all min-h-[26px]">
               {{ sha1Output || '---' }}
@@ -623,55 +621,55 @@ function decodeJwt() {
       <!-- TAB 6: Radix Converter -->
       <div v-if="activeTab === 'radix'" class="flex flex-col gap-4 text-xs md:text-sm max-w-xl">
         <div class="border-b border-line pb-1 flex justify-between items-center">
-          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">RADIX CONVERTER</span>
-          <button @click="clearRadix" class="text-neutral-600 text-[10px] hover:underline cursor-pointer uppercase tracking-widest">CLEAR ALL</button>
+          <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.radix_converter') }}</span>
+          <button @click="clearRadix" class="text-neutral-600 text-[10px] hover:underline cursor-pointer uppercase tracking-widest">{{ $t('devtools.clear_all') }}</button>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <!-- DEC -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">DECIMAL / 10</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">{{ $t('devtools.radix_dec') }}</label>
             <input 
               :value="radixDec"
               @input="updateFromDec(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Dec value..." 
+              :placeholder="$t('devtools.placeholder.dec')" 
               class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
           </div>
 
           <!-- HEX -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">HEXADECIMAL / 16</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">{{ $t('devtools.radix_hex') }}</label>
             <input 
               :value="radixHex"
               @input="updateFromHex(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Hex value..." 
+              :placeholder="$t('devtools.placeholder.hex')" 
               class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-accent font-mono outline-none focus:border-accent font-bold"
             />
           </div>
 
           <!-- BIN -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">BINARY / 2</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">{{ $t('devtools.radix_bin') }}</label>
             <input 
               :value="radixBin"
               @input="updateFromBin(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Bin value..." 
+              :placeholder="$t('devtools.placeholder.bin')" 
               class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
           </div>
 
           <!-- OCT -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">OCTAL / 8</label>
+            <label class="text-xs text-neutral-500 font-mono text-[10px] uppercase tracking-widest">{{ $t('devtools.radix_oct') }}</label>
             <input 
               :value="radixOct"
               @input="updateFromOct(($event.target as HTMLInputElement).value)"
               type="text" 
-              placeholder="Oct value..." 
+              :placeholder="$t('devtools.placeholder.oct')" 
               class="border border-border-dim px-2.5 py-1.5 rounded-sm bg-surface text-neutral-300 font-mono outline-none focus:border-accent"
             />
           </div>
@@ -683,11 +681,11 @@ function decodeJwt() {
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <!-- Left 2 columns: Input -->
           <div class="md:col-span-2 flex flex-col gap-1.5">
-            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">INPUT JWT TOKEN</span>
+            <span class="text-xs text-neutral-500 uppercase tracking-widest text-[10px]">{{ $t('devtools.input_jwt') }}</span>
             <textarea 
               v-model="jwtInput" 
               @input="decodeJwt"
-              placeholder="Paste JWT token (Header.Payload.Signature)..." 
+              :placeholder="$t('devtools.placeholder.jwt_input')" 
               class="w-full h-[240px] border border-border-dim p-2.5 rounded-sm bg-surface text-neutral-300 font-mono text-[10px] outline-none focus:border-accent break-all"
             ></textarea>
           </div>
@@ -695,26 +693,26 @@ function decodeJwt() {
           <div class="md:col-span-3 flex flex-col gap-3">
             <div class="flex-1 flex flex-col gap-1">
               <div class="flex justify-between items-center text-xs">
-                <span class="text-accent font-bold text-[10px] tracking-widest uppercase">HEADER</span>
-                <button v-if="jwtHeader" @click="copyToClipboard(jwtHeader)" class="text-accent text-[10px] hover:underline cursor-pointer">COPY</button>
+                <span class="text-accent font-bold text-[10px] tracking-widest uppercase">{{ $t('devtools.jwt_header') }}</span>
+                <button v-if="jwtHeader" @click="copyToClipboard(jwtHeader)" class="text-accent text-[10px] hover:underline cursor-pointer">{{ $t('devtools.copy') }}</button>
               </div>
               <textarea 
                 readonly
                 :value="jwtHeader" 
-                placeholder="Decoded header JSON..."
+                :placeholder="$t('devtools.placeholder.jwt_header')"
                 class="w-full h-[90px] border border-border-dim p-2 rounded-sm bg-surface text-neutral-300 font-mono text-[10px] outline-none"
               ></textarea>
             </div>
             
             <div class="flex-1 flex flex-col gap-1">
               <div class="flex justify-between items-center text-xs">
-                <span class="text-accent font-bold text-[10px] tracking-widest uppercase">PAYLOAD</span>
-                <button v-if="jwtPayload" @click="copyToClipboard(jwtPayload)" class="text-accent text-[10px] hover:underline cursor-pointer">COPY</button>
+                <span class="text-accent font-bold text-[10px] tracking-widest uppercase">{{ $t('devtools.jwt_payload') }}</span>
+                <button v-if="jwtPayload" @click="copyToClipboard(jwtPayload)" class="text-accent text-[10px] hover:underline cursor-pointer">{{ $t('devtools.copy') }}</button>
               </div>
               <textarea 
                 readonly
                 :value="jwtPayload" 
-                placeholder="Decoded payload JSON..."
+                :placeholder="$t('devtools.placeholder.jwt_payload')"
                 class="w-full h-[120px] border border-border-dim p-2 rounded-sm bg-surface text-neutral-300 font-mono text-[10px] outline-none"
               ></textarea>
             </div>

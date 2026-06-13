@@ -117,17 +117,16 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
       </span>
     </div>
     <div v-if="todos.length === 0" class="text-center text-[9px] text-neutral-500 py-2">
-      // NO TASKS
+      {{ $t('todo.empty') }}
     </div>
   </div>
 
   <!-- Full mode: Kanban Board -->
   <div v-else class="w-full flex flex-col gap-3 select-none font-mono">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-border-dim pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-accent">[ TASKS ]</span>
+    <!-- Header Controls -->
+    <div class="flex items-center justify-end border-b border-border-dim pb-2.5">
       <span class="text-[10px] text-neutral-500">
-        TOTAL:{{ todos.length }} / OPEN:{{ todos.filter(t => !t.completed).length }}
+        {{ $t('todo.total') }}:{{ todos.length }} / {{ $t('todo.open') }}:{{ todos.filter(t => !t.completed).length }}
       </span>
     </div>
 
@@ -136,7 +135,7 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
       <!-- 1. TODAY COLUMN -->
       <div class="border border-border-dim p-3 bg-surface flex flex-col gap-3">
         <div class="border-b border-border-dim pb-1.5 flex justify-between items-center">
-          <span class="text-xs uppercase tracking-widest text-accent">TODAY</span>
+          <span class="text-xs uppercase tracking-widest text-accent">{{ $t('todo.today') }}</span>
           <span class="text-[9px] bg-base text-accent px-2 py-0.2 border border-border-dim">{{ todayTodos.length }}</span>
         </div>
 
@@ -145,10 +144,10 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
             v-model="newTodayText"
             type="text"
             @keydown.enter="addTodo('today')"
-            placeholder="$ add task..."
+            :placeholder="$t('todo.add_placeholder')"
             class="w-full px-2 py-1.5 outline-none text-neutral-300 bg-transparent text-[11px] placeholder:text-neutral-600"
           />
-          <button @click="addTodo('today')" class="bg-surface border-l border-border-dim px-2.5 text-[10px] text-accent hover:text-neutral-300 cursor-pointer transition-none">ADD</button>
+          <button @click="addTodo('today')" class="bg-surface border-l border-border-dim px-2.5 text-[10px] text-accent hover:text-neutral-300 cursor-pointer transition-none">{{ $t('todo.add_btn') }}</button>
         </div>
 
         <div class="flex-grow overflow-y-auto max-h-[300px] flex flex-col gap-2 pr-0.5">
@@ -173,19 +172,19 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
             </div>
 
             <div class="flex gap-2 justify-end text-[8px] border-t border-border-dim pt-1 mt-1 opacity-70 group-hover:opacity-100 transition-none">
-              <span class="text-neutral-600 mr-auto">MOVE_TO:</span>
-              <button @click="moveTodo(todo, 'longterm')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">LONGTERM →</button>
-              <button @click="moveTodo(todo, 'inbox')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">INBOX →</button>
+              <span class="text-neutral-600 mr-auto">{{ $t('todo.move_to') }}</span>
+              <button @click="moveTodo(todo, 'longterm')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">{{ $t('todo.longterm') }} →</button>
+              <button @click="moveTodo(todo, 'inbox')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">{{ $t('todo.inbox') }} →</button>
             </div>
           </div>
-          <div v-if="todayTodos.length === 0" class="text-center text-[10px] text-neutral-600 py-8">// EMPTY</div>
+          <div v-if="todayTodos.length === 0" class="text-center text-[10px] text-neutral-600 py-8">{{ $t('todo.empty') }}</div>
         </div>
       </div>
 
       <!-- 2. LONGTERM COLUMN -->
       <div class="border border-border-dim p-3 bg-surface flex flex-col gap-3">
         <div class="border-b border-border-dim pb-1.5 flex justify-between items-center">
-          <span class="text-xs uppercase tracking-widest text-accent">LONGTERM</span>
+          <span class="text-xs uppercase tracking-widest text-accent">{{ $t('todo.longterm') }}</span>
           <span class="text-[9px] bg-base text-accent px-2 py-0.2 border border-border-dim">{{ longtermTodos.length }}</span>
         </div>
 
@@ -194,10 +193,10 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
             v-model="newLongtermText"
             type="text"
             @keydown.enter="addTodo('longterm')"
-            placeholder="$ add task..."
+            :placeholder="$t('todo.add_placeholder')"
             class="w-full px-2 py-1.5 outline-none text-neutral-300 bg-transparent text-[11px] placeholder:text-neutral-600"
           />
-          <button @click="addTodo('longterm')" class="bg-surface border-l border-border-dim px-2.5 text-[10px] text-accent hover:text-neutral-300 cursor-pointer transition-none">ADD</button>
+          <button @click="addTodo('longterm')" class="bg-surface border-l border-border-dim px-2.5 text-[10px] text-accent hover:text-neutral-300 cursor-pointer transition-none">{{ $t('todo.add_btn') }}</button>
         </div>
 
         <div class="flex-grow overflow-y-auto max-h-[300px] flex flex-col gap-2 pr-0.5">
@@ -222,19 +221,19 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
             </div>
 
             <div class="flex gap-2 justify-end text-[8px] border-t border-border-dim pt-1 mt-1 opacity-70 group-hover:opacity-100 transition-none">
-              <span class="text-neutral-600 mr-auto">MOVE_TO:</span>
-              <button @click="moveTodo(todo, 'today')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">TODAY →</button>
-              <button @click="moveTodo(todo, 'inbox')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">INBOX →</button>
+              <span class="text-neutral-600 mr-auto">{{ $t('todo.move_to') }}</span>
+              <button @click="moveTodo(todo, 'today')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">{{ $t('todo.today') }} →</button>
+              <button @click="moveTodo(todo, 'inbox')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">{{ $t('todo.inbox') }} →</button>
             </div>
           </div>
-          <div v-if="longtermTodos.length === 0" class="text-center text-[10px] text-neutral-600 py-8">// EMPTY</div>
+          <div v-if="longtermTodos.length === 0" class="text-center text-[10px] text-neutral-600 py-8">{{ $t('todo.empty') }}</div>
         </div>
       </div>
 
       <!-- 3. INBOX COLUMN -->
       <div class="border border-border-dim p-3 bg-surface flex flex-col gap-3">
         <div class="border-b border-border-dim pb-1.5 flex justify-between items-center">
-          <span class="text-xs uppercase tracking-widest text-accent">INBOX</span>
+          <span class="text-xs uppercase tracking-widest text-accent">{{ $t('todo.inbox') }}</span>
           <span class="text-[9px] bg-base text-accent px-2 py-0.2 border border-border-dim">{{ inboxTodos.length }}</span>
         </div>
 
@@ -243,10 +242,10 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
             v-model="newInboxText"
             type="text"
             @keydown.enter="addTodo('inbox')"
-            placeholder="$ add task..."
+            :placeholder="$t('todo.add_placeholder')"
             class="w-full px-2 py-1.5 outline-none text-neutral-300 bg-transparent text-[11px] placeholder:text-neutral-600"
           />
-          <button @click="addTodo('inbox')" class="bg-surface border-l border-border-dim px-2.5 text-[10px] text-accent hover:text-neutral-300 cursor-pointer transition-none">ADD</button>
+          <button @click="addTodo('inbox')" class="bg-surface border-l border-border-dim px-2.5 text-[10px] text-accent hover:text-neutral-300 cursor-pointer transition-none">{{ $t('todo.add_btn') }}</button>
         </div>
 
         <div class="flex-grow overflow-y-auto max-h-[300px] flex flex-col gap-2 pr-0.5">
@@ -271,12 +270,12 @@ const inboxTodos = computed(() => todos.value.filter(t => t.category === 'inbox'
             </div>
 
             <div class="flex gap-2 justify-end text-[8px] border-t border-border-dim pt-1 mt-1 opacity-70 group-hover:opacity-100 transition-none">
-              <span class="text-neutral-600 mr-auto">MOVE_TO:</span>
-              <button @click="moveTodo(todo, 'today')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">TODAY →</button>
-              <button @click="moveTodo(todo, 'longterm')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">LONGTERM →</button>
+              <span class="text-neutral-600 mr-auto">{{ $t('todo.move_to') }}</span>
+              <button @click="moveTodo(todo, 'today')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">{{ $t('todo.today') }} →</button>
+              <button @click="moveTodo(todo, 'longterm')" class="hover:text-black text-neutral-500 cursor-pointer transition-none">{{ $t('todo.longterm') }} →</button>
             </div>
           </div>
-          <div v-if="inboxTodos.length === 0" class="text-center text-[10px] text-neutral-600 py-8">// EMPTY</div>
+          <div v-if="inboxTodos.length === 0" class="text-center text-[10px] text-neutral-600 py-8">{{ $t('todo.empty') }}</div>
         </div>
       </div>
     </div>

@@ -57,7 +57,7 @@ function handleKeydown(e: KeyboardEvent) {
     <div class="flex border border-line border-b-0">
       <!-- Prefix label -->
       <div class="px-3 py-1.5 text-[10px] text-dim border-r border-line flex items-center tracking-widest">
-        ENGINE
+        {{ $t('search.engine') }}
       </div>
       <!-- Engine buttons -->
       <button
@@ -101,7 +101,7 @@ function handleKeydown(e: KeyboardEvent) {
           @keydown="handleKeydown"
           @focus="isFocused = true"
           @blur="isFocused = false"
-          placeholder="QUERY_STRING..."
+          :placeholder="$t('search.placeholder')"
           class="w-full px-3 py-2.5 text-primary text-sm bg-transparent outline-none placeholder-neutral-600 tracking-wide"
           autocomplete="off"
           spellcheck="false"
@@ -120,17 +120,17 @@ function handleKeydown(e: KeyboardEvent) {
         class="px-6 py-2.5 text-[11px] font-bold tracking-widest border-l border-line cursor-pointer transition-none bg-base text-neutral-300 hover:bg-neutral-200 hover:text-black glitch-on-click"
         :class="[isFocused ? 'border-accent' : '']"
       >
-        EXEC
+        {{ $t('search.exec') }}
       </button>
     </div>
 
     <!-- Status Bar -->
     <div class="flex items-center justify-between border border-dim border-t-0 px-3 py-1">
       <span class="text-[9px] text-neutral-600 tracking-widest">
-        {{ query.length > 0 ? `LEN:${query.length}` : 'AWAITING_INPUT' }}
+        {{ query.length > 0 ? `LEN:${query.length}` : $t('search.awaiting') }}
       </span>
       <span class="text-[9px] text-neutral-600 tracking-widest">
-        CTRL+G/B/K TO SWITCH
+        {{ $t('search.switch') }}
       </span>
     </div>
 

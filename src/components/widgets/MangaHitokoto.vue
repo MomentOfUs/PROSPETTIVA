@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { t } from '../../i18n'
 
 const props = withDefaults(defineProps<{
   preview?: boolean
@@ -15,12 +16,12 @@ const layoutDirection = ref<'horizontal' | 'vertical'>('horizontal')
 const selectedCategory = ref('i')
 
 const categories = [
-  { code: 'i', name: 'POETRY' },
-  { code: 'k', name: 'PHILOSOPHY' },
-  { code: 'd', name: 'LITERATURE' },
-  { code: 'h', name: 'FILM' },
-  { code: 'a', name: 'ANIME' },
-  { code: 'e', name: 'ORIGINAL' }
+  { code: 'i', nameKey: 'poetry' },
+  { code: 'k', nameKey: 'philosophy' },
+  { code: 'd', nameKey: 'literature' },
+  { code: 'h', nameKey: 'film' },
+  { code: 'a', nameKey: 'anime' },
+  { code: 'e', nameKey: 'original' }
 ]
 
 const showToast = ref(false)
@@ -46,7 +47,7 @@ async function fetchQuote() {
 
 function copyText() {
   const fullText = `"${quote.value}"\n—— ${author.value} · 《${fromSource.value.replace(/^《|》$/g, '')}》`
-  navigator.clipboard.writeText(fullText); triggerToast('COPIED')
+  navigator.clipboard.writeText(fullText); triggerToast(t('hitokoto.copied'))
 }
 
 const isExporting = ref(false)
@@ -58,11 +59,17 @@ function exportAsImage() {
   const ctx = canvas.getContext('2d')
   if (!ctx) { isExporting.value = false; return }
 
-  // Terminal black background
-  ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 800, 600)
-  ctx.strokeStyle = '#262626'; ctx.lineWidth = 1; ctx.strokeRect(10, 10, 780, 580)
+  const themeStyle = getComputedStyle(document.documentElement)
+  const colorBase = themeStyle.getPropertyValue('--color-base').trim() || '#000000'
+  const colorLine = themeStyle.getPropertyValue('--color-line').trim() || '#262626'
+  const colorPrimary = themeStyle.getPropertyValue('--color-primary').trim() || '#FFFFFF'
+  const colorAccent = themeStyle.getPropertyValue('--color-accent').trim() || '#FF5F1F'
 
-  ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 26px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'
+  // Terminal black background
+  ctx.fillStyle = colorBase; ctx.fillRect(0, 0, 800, 600)
+  ctx.strokeStyle = colorLine; ctx.lineWidth = 1; ctx.strokeRect(10, 10, 780, 580)
+
+  ctx.fillStyle = colorPrimary; ctx.font = 'bold 26px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'
   const fullQuoteText = `> "${quote.value}"`
   const authorText = `// ${author.value} · ${fromSource.value.replace(/^《|》$/g, '')}`
 
@@ -92,7 +99,7 @@ function exportAsImage() {
   }
 
   // Terminal prompt decoration
-  ctx.fillStyle = '#FF5F1F'; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'left'
+  ctx.fillStyle = colorAccent; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'left'
   ctx.fillText('$ hitokoto --category ' + selectedCategory.value, 30, 40)
 
   const link = document.createElement('a')
@@ -112,18 +119,17 @@ onMounted(() => { fetchQuote() })
 
   <!-- Full Mode -->
   <div v-else class="w-full flex flex-col gap-4 font-bold select-none text-neutral-300">
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-neutral-500">[ QUOTE ]</span>
+    <div class="flex items-center justify-end border-b border-line pb-2.5">
       <button @click="fetchQuote" :disabled="loading"
         class="text-xs bg-base border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 px-3 py-1 cursor-pointer transition-none disabled:opacity-50">
-        {{ loading ? 'LOADING...' : 'REFRESH' }}
+        {{ loading ? $t('hitokoto.loading') : $t('hitokoto.refresh') }}
       </button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
       <!-- Left: Preview -->
       <div class="md:col-span-7 flex flex-col justify-center">
-        <div v-if="loading" class="text-center py-20 text-xs text-neutral-600 border border-border-dim bg-surface">LOADING...</div>
+        <div v-if="loading" class="text-center py-20 text-xs text-neutral-600 border border-border-dim bg-surface">{{ $t('hitokoto.loading') }}</div>
         <div v-else class="flex-1 flex items-center justify-center p-6 min-h-[300px] border border-line bg-base relative">
           <!-- Terminal prompt -->
           <div class="absolute top-3 left-3 text-[10px] text-accent font-mono">$ hitokoto</div>
@@ -148,43 +154,43 @@ onMounted(() => { fetchQuote() })
       <!-- Right: Controls -->
       <div class="md:col-span-5 bg-surface border border-line p-4 flex flex-col gap-4 text-left">
         <div class="flex flex-col gap-2">
-          <span class="text-[10px] text-neutral-600 tracking-widest uppercase">CATEGORIES</span>
+          <span class="text-[10px] text-neutral-600 tracking-widest uppercase">{{ $t('hitokoto.categories') }}</span>
           <div class="grid grid-cols-2 gap-2">
             <button v-for="cat in categories" :key="cat.code"
               @click="selectedCategory = cat.code; fetchQuote()"
               class="text-[11px] py-1.5 px-2 border cursor-pointer transition-none text-center truncate"
               :class="selectedCategory === cat.code ? 'bg-accent/10 border-accent text-accent font-bold' : 'bg-base border-border-dim text-neutral-500 hover:bg-surface hover:text-neutral-300'">
-              {{ cat.name }}
+              {{ $t('hitokoto.' + cat.nameKey) }}
             </button>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <span class="text-[10px] text-neutral-600 tracking-widest uppercase">LAYOUT</span>
+          <span class="text-[10px] text-neutral-600 tracking-widest uppercase">{{ $t('hitokoto.layout') }}</span>
           <div class="grid grid-cols-2 gap-2">
             <button @click="layoutDirection = 'horizontal'"
               class="text-[11px] py-1.5 px-2 border cursor-pointer transition-none"
               :class="layoutDirection === 'horizontal' ? 'border-accent bg-surface text-accent font-bold' : 'border-border-dim bg-base text-neutral-500'">
-              HORIZONTAL
+              {{ $t('hitokoto.horizontal') }}
             </button>
             <button @click="layoutDirection = 'vertical'"
               class="text-[11px] py-1.5 px-2 border cursor-pointer transition-none"
               :class="layoutDirection === 'vertical' ? 'border-accent bg-surface text-accent font-bold' : 'border-border-dim bg-base text-neutral-500'">
-              VERTICAL
+              {{ $t('hitokoto.vertical') }}
             </button>
           </div>
         </div>
 
         <div class="flex flex-col gap-2 mt-2 pt-2 border-t border-border-dim">
-          <span class="text-[10px] text-neutral-600 tracking-widest uppercase">EXPORT</span>
+          <span class="text-[10px] text-neutral-600 tracking-widest uppercase">{{ $t('hitokoto.export') }}</span>
           <div class="flex flex-col gap-2">
             <button @click="copyText"
               class="w-full text-xs py-2 bg-surface border border-line text-neutral-300 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 cursor-pointer transition-none font-bold">
-              COPY TEXT
+              {{ $t('hitokoto.copy') }}
             </button>
             <button @click="exportAsImage" :disabled="isExporting || loading"
               class="w-full text-xs py-2 bg-surface border border-line text-neutral-300 hover:bg-neutral-200 hover:text-black cursor-pointer transition-none font-bold disabled:opacity-50">
-              {{ isExporting ? 'EXPORTING...' : 'EXPORT PNG' }}
+              {{ isExporting ? $t('hitokoto.exporting') : $t('hitokoto.export.png') }}
             </button>
           </div>
         </div>

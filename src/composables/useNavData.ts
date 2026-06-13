@@ -32,6 +32,7 @@ export interface Config {
   openaiModel?: string
   gridRows: number
   gridCols: number
+  accentColor?: 'orange' | 'green' | 'yellow' | 'blue' | 'purple'
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -57,7 +58,8 @@ const DEFAULT_CONFIG: Config = {
   openaiBase: 'https://api.deepseek.com',
   openaiModel: 'deepseek-chat',
   gridRows: 5,
-  gridCols: 10
+  gridCols: 10,
+  accentColor: 'orange'
 }
 
 // 旧版颜色兼容映射（pastel → 高对比油画色调）
@@ -137,6 +139,7 @@ export function useNavData() {
         // 兼容旧版：补齐 gridRows/gridCols 默认值
         if (!config.value.gridRows) config.value.gridRows = DEFAULT_CONFIG.gridRows
         if (!config.value.gridCols) config.value.gridCols = DEFAULT_CONFIG.gridCols
+        if (!config.value.accentColor) config.value.accentColor = DEFAULT_CONFIG.accentColor
 
         // 修正旧版 logoText
         if (['MANGA NAV', 'MANGA DASH', 'ARTISAN NAV'].includes(config.value.logoText)) {

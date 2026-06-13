@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { triggerCloudPush } from '../../utils/api'
+import { t } from '../../i18n'
 
 const props = withDefaults(defineProps<{
   preview?: boolean
@@ -25,16 +26,16 @@ const showAddForm = ref(false)
 // Form fields
 const newTitle = ref('')
 const newContent = ref('')
-const newCategory = ref('通用')
-const newColor = ref('#6e5020') // 拉特兰金
+const newCategory = ref('GENERAL')
+const newColor = ref('#0A0A0A')
 
 const colorOptions = [
-  { label: '美红', value: '#4a161b' },
-  { label: '波绿', value: '#152e24' },
-  { label: '西蓝', value: '#18283b' },
-  { label: '拉金', value: '#6e5020' },
-  { label: '达褐', value: '#2e1f18' },
-  { label: '威灰', value: '#2b2b2e' }
+  { label: 'BASE', value: '#000000' },
+  { label: 'SURFACE', value: '#0A0A0A' },
+  { label: 'CARD', value: '#111111' },
+  { label: 'DARK', value: '#1A1A1A' },
+  { label: 'CHARCOAL', value: '#262626' },
+  { label: 'STONE', value: '#1F1F1F' }
 ]
 
 function loadSnippets() {
@@ -48,10 +49,10 @@ function loadSnippets() {
   } else {
     // Default initial mock snippets
     snippets.value = [
-      { id: 's1', title: 'Git 提交全流程', content: 'git add . && git commit -m "update" && git push', category: '开发', color: '#18283b' },
-      { id: 's2', title: '周报汇报模板', content: '【本周进展】\n1. \n2. \n【下周计划】\n1. \n2. \n【需协调事项】\n无', category: '办公', color: '#6e5020' },
-      { id: 's3', title: '查看本地 IP 地址', content: 'curl ipinfo.io', category: '开发', color: '#152e24' },
-      { id: 's4', title: '每日打卡回复', content: '今日已[ OK ]打卡，各项业务指标运行良好！', category: '通用', color: '#4a161b' }
+      { id: 's1', title: 'Git Commit All', content: 'git add . && git commit -m "update" && git push', category: 'DEV', color: '#0A0A0A' },
+      { id: 's2', title: 'Weekly Report', content: '[PROGRESS]\n1. \n2. \n[NEXT_WEEK]\n1. \n2. \n[NEEDS]\nNone', category: 'WORK', color: '#111111' },
+      { id: 's3', title: 'Get Local IP', content: 'curl ipinfo.io', category: 'DEV', color: '#1A1A1A' },
+      { id: 's4', title: 'Daily Check-in', content: 'Check-in complete. All systems nominal.', category: 'GENERAL', color: '#1F1F1F' }
     ]
   }
 }
@@ -99,18 +100,18 @@ async function copySnippet(snippet: Snippet) {
       }
     }, 1500)
   } catch (err) {
-    alert('[ERROR] CLIPBOARD_ACCESS_DENIED')
+    alert(t('alert.clipboard_denied'))
   }
 }
 
 // Add action
 function addSnippet() {
   if (!newTitle.value.trim() || !newContent.value.trim()) {
-    alert('[ERROR] TITLE_AND_CONTENT_REQUIRED')
+    alert(t('alert.title_content_required'))
     return
   }
 
-  const categoryTrim = newCategory.value.trim() || '通用'
+  const categoryTrim = newCategory.value.trim() || 'GENERAL'
 
   snippets.value.push({
     id: Date.now().toString(),
@@ -123,19 +124,19 @@ function addSnippet() {
   // Reset form
   newTitle.value = ''
   newContent.value = ''
-  newCategory.value = '通用'
-  newColor.value = '#6e5020'
+  newCategory.value = 'GENERAL'
+  newColor.value = '#0A0A0A'
   showAddForm.value = false
 
   // Switch tab if needed
-  if (activeCategory.value !== '全部' && activeCategory.value !== categoryTrim) {
+  if (activeCategory.value !== 'ALL' && activeCategory.value !== categoryTrim) {
     activeCategory.value = categoryTrim
   }
 }
 
 // Delete action
 function deleteSnippet(id: string) {
-  if (confirm('[ DESTROY ] ?')) {
+  if (confirm(t('confirm.destroy'))) {
     snippets.value = snippets.value.filter(s => s.id !== id)
   }
 }
@@ -153,15 +154,14 @@ function deleteSnippet(id: string) {
       <p class="text-[8px] font-mono text-neutral-400 truncate mt-0.5">{{ snip.content }}</p>
     </div>
     <div v-if="snippets.length === 0" class="text-center text-[9px] text-neutral-600 py-2">
-      // EMPTY //
+      {{ '// NO_SNIPPETS' }}
     </div>
   </div>
 
   <!-- Full Mode -->
   <div v-else class="w-full flex flex-col gap-3 font-bold select-none font-mono text-neutral-300">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-accent">[ SNIPPET ]</span>
+    <!-- Header Controls -->
+    <div class="flex items-center justify-end border-b border-line pb-2.5">
       <div class="flex items-center gap-1.5">
         <button 
           @click="isEditMode = !isEditMode" 
@@ -169,14 +169,14 @@ function deleteSnippet(id: string) {
           :class="[isEditMode ? 'bg-accent border-accent text-base' : '']"
           title="[ MANAGEMENT ]"
         >
-          {{ isEditMode ? '[ OK ]' : 'EDIT' }}
+          {{ isEditMode ? '[ OK ]' : $t('edit') }}
         </button>
         <button 
           @click="showAddForm = !showAddForm; isEditMode = false" 
           class="text-xs px-2.5 py-0.5 border border-border-dim bg-base text-neutral-400 hover:text-black transition-none cursor-pointer"
-          title="[ + MOUNT ]咒语"
+          title="ADD_SNIPPET"
         >
-          {{ showAddForm ? '[ ABORT ]' : '[ + MOUNT ]' }}
+          {{ showAddForm ? $t('snippet.cancel') : $t('snippet.add') }}
         </button>
       </div>
     </div>
@@ -185,7 +185,7 @@ function deleteSnippet(id: string) {
       <!-- Add Snippet Form -->
       <div v-if="showAddForm" class="flex flex-col gap-3 border border-border-dim p-3 bg-base text-xs md:text-sm">
         <div class="flex flex-col gap-1">
-          <label class="text-neutral-500 text-xs uppercase tracking-widest">NAME</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">{{ $t('snippet.name') }}</label>
           <input 
             v-model="newTitle" 
             type="text" 
@@ -194,7 +194,7 @@ function deleteSnippet(id: string) {
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-neutral-500 text-xs uppercase tracking-widest">CATEGORY</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">{{ $t('snippet.category') }}</label>
           <input 
             v-model="newCategory" 
             type="text" 
@@ -203,17 +203,17 @@ function deleteSnippet(id: string) {
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-neutral-500 text-xs uppercase tracking-widest">PAYLOAD</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">{{ $t('snippet.payload') }}</label>
           <textarea 
             v-model="newContent" 
-            placeholder="CLICK TO COPY" 
+            placeholder="Content to copy on click" 
             rows="3"
             class="border border-border-dim p-2 bg-surface text-neutral-300 outline-none focus:border-accent transition-none resize-y font-mono text-xs"
           ></textarea>
         </div>
         <!-- Color Picker -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-neutral-500 text-xs uppercase tracking-widest">BG_COLOR</label>
+          <label class="text-neutral-500 text-xs uppercase tracking-widest">{{ $t('snippet.bg.color') }}</label>
           <div class="flex gap-2 flex-wrap">
             <button 
               v-for="opt in colorOptions" 
@@ -230,7 +230,7 @@ function deleteSnippet(id: string) {
           @click="addSnippet" 
           class="bg-surface text-neutral-300 hover:bg-neutral-200 hover:text-black border border-line py-2 font-bold cursor-pointer transition-none mt-1"
         >
-          [ + MOUNT ]
+            {{ $t('snippet.save') }}
         </button>
       </div>
 
@@ -243,13 +243,13 @@ function deleteSnippet(id: string) {
             :key="cat"
             @click="activeCategory = cat"
             class="text-[10px] px-2.5 py-0.5 border border-border-dim transition-none shrink-0 cursor-pointer"
-            :class="[activeCategory === cat ? 'bg-accent text-base border-accent' : 'text-neutral-500 hover:text-neutral-300']"
+            :class="[activeCategory === cat ? 'bg-accent text-base border-accent' : 'text-neutral-500 hover:bg-neutral-200 hover:text-black hover:border-neutral-200']"
           >
             {{ cat }}
           </button>
         </div>
 
-        <!-- Snippet Cards Grid -->
+        <!-- Snippet Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
           <div 
             v-for="snip in filteredSnippets" 
@@ -268,13 +268,13 @@ function deleteSnippet(id: string) {
               <button 
                 v-if="isEditMode"
                 @click.stop="deleteSnippet(snip.id)"
-                class="text-neutral-400 hover:text-black bg-base hover:bg-neutral-200 hover:border-neutral-200 border border-line w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-pointer transition-none"
-                title="删除此咒语"
+                class="text-neutral-400 hover:text-accent bg-base hover:bg-neutral-300 hover:border-neutral-300 border border-line w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-pointer transition-none"
+                title="DELETE"
               >
                 ×
               </button>
-              <span v-else-if="copiedId === snip.id" class="text-[8px] bg-accent text-base px-1 animate-pulse scale-90 origin-right">
-                ✓ 已吟唱
+              <span v-else-if="copiedId === snip.id" class="text-[8px] bg-accent text-base px-1 scale-90 origin-right">
+                ✓ {{ $t('snippet.copied') }}
               </span>
               <span v-else class="text-[7.5px] opacity-45 uppercase tracking-wider text-neutral-600 font-mono scale-90 origin-right">
                 COPY
@@ -286,7 +286,7 @@ function deleteSnippet(id: string) {
           </div>
           
           <div v-if="filteredSnippets.length === 0" class="col-span-full text-center text-xs text-neutral-600 py-6">
-            // EMPTY //
+            {{ '// NO_SNIPPETS' }}
           </div>
         </div>
       </div>
@@ -299,9 +299,9 @@ function deleteSnippet(id: string) {
   height: 3px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: var(--color-line);
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: var(--color-neutral);
 }
 </style>

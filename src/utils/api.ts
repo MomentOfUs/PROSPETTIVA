@@ -1,6 +1,6 @@
 // 前端云同步原生 fetch API 接口封装
 
-const BASE_URL = ''
+const BASE_URL = import.meta.env.DEV ? 'http://localhost:8000' : ''
 
 // ==================== 完整类型定义 ====================
 
@@ -190,6 +190,33 @@ export const api = {
     return request('/api/sync/push', {
       method: 'POST',
       body: JSON.stringify(payload)
+    })
+  },
+
+  // 6. 系统监控硬件遥测
+  async getSysTelemetry() {
+    return request<{
+      cpu: number
+      ram: number
+      partitions: { name: string; used: number; total: string }[]
+      processes: { id: number; pid: number; name: string; desc: string; cpu: number; mem: number; status: 'running' | 'terminated' }[]
+      uptime: number
+    }>('/api/sysinfo/telemetry')
+  },
+
+  // 7. 终止指定 PID 进程
+  async killProcess(pid: number) {
+    return request('/api/sysinfo/kill', {
+      method: 'POST',
+      body: JSON.stringify({ pid })
+    })
+  },
+
+  // 8. 代理网络延时探测
+  async probeNetwork(host: string) {
+    return request<{ status: 'success' | 'failed'; latency: number | null }>('/api/network/probe', {
+      method: 'POST',
+      body: JSON.stringify({ host })
     })
   }
 }

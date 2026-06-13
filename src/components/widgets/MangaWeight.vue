@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { triggerCloudPush } from '../../utils/api'
+import { t, locale } from '../../i18n'
 
 const props = withDefaults(defineProps<{
   preview?: boolean
@@ -113,7 +114,7 @@ watch(activityLevel, (newVal) => {
 
 function handleAddRecord() {
   if (!inputWeight.value || inputWeight.value <= 0) {
-    alert('[ERROR] INVALID_WEIGHT')
+    alert('[ERROR] ' + t('alert.invalid_weight'))
     return
   }
 
@@ -138,7 +139,7 @@ function handleAddRecord() {
 }
 
 function deleteRecord(id: string) {
-  if (confirm('[ DESTROY ] ?')) {
+  if (confirm(t('confirm.destroy'))) {
     records.value = records.value.filter(r => r.id !== id)
     if (editingRecordId.value === id) {
       editingRecordId.value = null
@@ -162,7 +163,7 @@ function cancelEdit() {
 
 function saveEdit(id: string) {
   if (!editWeight.value || editWeight.value <= 0) {
-    alert('[ERROR] INVALID_WEIGHT')
+    alert('[ERROR] ' + t('alert.invalid_weight'))
     return
   }
   const record = records.value.find(r => r.id === id)
@@ -180,14 +181,14 @@ function saveEdit(id: string) {
 }
 
 function resetToMock() {
-  if (confirm('[ RESET ] ? [WILL_OVERWRITE]')) {
+  if (confirm(t('confirm.reset_data'))) {
     localStorage.removeItem('manga_weight_records')
     loadData()
   }
 }
 
 function clearAllRecords() {
-  if (confirm('[ DESTROY_ALL ] ? [IRREVERSIBLE]')) {
+  if (confirm(t('confirm.destroy_all'))) {
     records.value = []
   }
 }
@@ -431,12 +432,12 @@ function handleImport(event: Event) {
         if (parsed.birthYear) birthYear.value = Number(parsed.birthYear)
         if (parsed.gender) gender.value = parsed.gender
         if (parsed.activityLevel) activityLevel.value = Number(parsed.activityLevel)
-        alert('[OK] IMPORT_COMPLETE')
+        alert('[OK] ' + t('alert.import_complete'))
       } else {
-        alert('[ERROR] PARSE_FAIL')
+        alert('[ERROR] ' + t('alert.parse_fail'))
       }
     } catch {
-      alert('[ERROR] INVALID_FILE')
+      alert('[ERROR] ' + t('alert.invalid_file'))
     }
   }
   reader.readAsText(file)
@@ -452,8 +453,8 @@ function handleImport(event: Event) {
         {{ latestRecord.weight }} <span class="text-[9px] font-mono opacity-75">kg</span>
       </div>
       <div class="flex gap-2 text-[9px] opacity-85 mt-0.5">
-        <span class="bg-surface border border-border-dim px-1.5 py-0.2 text-neutral-400">BMI: {{ bmi }}</span>
-        <span v-if="latestRecord.bodyFat" class="bg-surface border border-border-dim px-1.5 py-0.2 text-neutral-400">BF%: {{ latestRecord.bodyFat }}%</span>
+        <span class="bg-surface border border-border-dim px-1.5 py-0.2 text-neutral-400">{{ $t('bio.bmi') }}: {{ bmi }}</span>
+        <span v-if="latestRecord.bodyFat" class="bg-surface border border-border-dim px-1.5 py-0.2 text-neutral-400">{{ $t('bio.bf') }}: {{ latestRecord.bodyFat }}%</span>
       </div>
     </div>
     <div v-else class="text-center text-[9px] text-neutral-600 py-2 italic">
@@ -463,16 +464,11 @@ function handleImport(event: Event) {
 
   <!-- Full Mode -->
   <div v-else class="w-full flex flex-col gap-5 font-bold font-mono text-neutral-300">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-neutral-400">[ BIO ]</span>
-    </div>
-
     <!-- Top: Large Quantitative Astronomy Line Chart -->
     <div class="border border-line p-4 bg-surface flex flex-col gap-3 ">
       <div class="border-b border-line pb-1.5 flex justify-between items-center">
         <span class="text-sm font-semibold tracking-wider text-accent flex items-center gap-1.5">
-          CHART // WEIGHT TRAJECTORY
+          {{ locale === 'zh' ? '图表 //' : 'CHART //' }} {{ bigChartType === 'weight' ? $t('bio.weight') : bigChartType === 'bodyFat' ? $t('bio.bodyfat') : $t('bio.waist') }} {{ locale === 'zh' ? '轨迹' : 'TRAJECTORY' }}
         </span>
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Metric switches -->
@@ -482,21 +478,21 @@ function handleImport(event: Event) {
               class="px-2.5 py-0.5 cursor-pointer transition-none"
               :class="[bigChartType === 'weight' ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              WEIGHT
+              {{ $t('bio.weight') }}
             </button>
             <button
               @click="bigChartType = 'bodyFat'"
               class="px-2.5 py-0.5 cursor-pointer border-l border-r border-border-dim transition-none"
               :class="[bigChartType === 'bodyFat' ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              BF%
+              {{ $t('bio.bf') }}
             </button>
             <button
               @click="bigChartType = 'waist'"
               class="px-2.5 py-0.5 cursor-pointer transition-none"
               :class="[bigChartType === 'waist' ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              WAIST
+              {{ $t('bio.waist') }}
             </button>
           </div>
 
@@ -507,21 +503,21 @@ function handleImport(event: Event) {
               class="px-2 py-0.5 cursor-pointer transition-none"
               :class="[bigChartRange === 7 ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              LAST 7
+              {{ $t('bio.last.7') }}
             </button>
             <button
               @click="bigChartRange = 30"
               class="px-2 py-0.5 cursor-pointer border-l border-r border-border-dim transition-none"
               :class="[bigChartRange === 30 ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              LAST 30
+              {{ $t('bio.last.30') }}
             </button>
             <button
               @click="bigChartRange = 0"
               class="px-2 py-0.5 cursor-pointer transition-none"
               :class="[bigChartRange === 0 ? 'bg-accent text-base font-bold' : 'text-neutral-500 hover:text-neutral-300']"
             >
-              ALL
+              {{ $t('bio.all') }}
             </button>
           </div>
         </div>
@@ -529,13 +525,13 @@ function handleImport(event: Event) {
 
       <div class="w-full h-[200px] bg-base border border-border-dim relative overflow-hidden p-1 flex items-center justify-center">
         <div v-if="bigChartRecords.length < 2" class="text-center text-neutral-600 py-12">
-          // NEED 2+ RECORDS WITH SELECTED METRIC
+          {{ $t('bio.need.records') }}
         </div>
 
         <svg v-else class="w-full h-full" viewBox="0 0 580 200">
           <defs>
             <pattern id="big-chart-hatch" width="8" height="8" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="8" x2="8" y2="0" stroke="rgba(38, 38, 38, 0.3)" stroke-width="0.7" />
+              <line x1="0" y1="8" x2="8" y2="0" stroke="var(--color-line)" stroke-opacity="0.3" stroke-width="0.7" />
             </pattern>
           </defs>
 
@@ -549,14 +545,14 @@ function handleImport(event: Event) {
               :y1="tick.y"
               :x2="bigSvgConfig.width - bigSvgConfig.paddingRight"
               :y2="tick.y"
-              stroke="#262626"
+              stroke="var(--color-line)"
               stroke-width="0.8"
               stroke-dasharray="3,3"
             />
             <text
               :x="bigSvgConfig.paddingLeft - 8"
               :y="tick.y + 3"
-              fill="#737373"
+              fill="var(--color-neutral)"
               font-size="8px"
               text-anchor="end"
               font-family="monospace"
@@ -572,13 +568,13 @@ function handleImport(event: Event) {
               :y1="bigSvgConfig.paddingTop"
               :x2="tick.x"
               :y2="bigSvgConfig.height - bigSvgConfig.paddingBottom"
-              stroke="#262626"
+              stroke="var(--color-line)"
               stroke-width="0.8"
             />
             <text
               :x="tick.x"
               :y="bigSvgConfig.height - bigSvgConfig.paddingBottom + 12"
-              fill="#737373"
+              fill="var(--color-neutral)"
               font-size="9px"
               text-anchor="middle"
               font-family="monospace"
@@ -591,7 +587,7 @@ function handleImport(event: Event) {
           <path
             :d="bigSvgPathString"
             fill="none"
-            stroke="#FF5F1F"
+            stroke="var(--color-accent)"
             stroke-width="1.8"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -599,13 +595,13 @@ function handleImport(event: Event) {
 
           <!-- Graph Nodes -->
           <g v-for="(p, idx) in bigSvgPoints" :key="'p-'+idx" :transform="`translate(${p.x}, ${p.y})`">
-            <line x1="-4" y1="0" x2="4" y2="0" stroke="#FF5F1F" stroke-width="0.8" />
-            <line x1="0" y1="-4" x2="0" y2="4" stroke="#FF5F1F" stroke-width="0.8" />
-            <circle cx="0" cy="0" r="2.5" fill="#0A0A0A" stroke="#FF5F1F" stroke-width="1.2" />
+            <line x1="-4" y1="0" x2="4" y2="0" stroke="var(--color-accent)" stroke-width="0.8" />
+            <line x1="0" y1="-4" x2="0" y2="4" stroke="var(--color-accent)" stroke-width="0.8" />
+            <circle cx="0" cy="0" r="2.5" fill="var(--color-surface)" stroke="var(--color-accent)" stroke-width="1.2" />
             <text
               x="0"
               y="-8"
-              fill="#d4d4d4"
+              fill="var(--color-primary)"
               font-size="9px"
               font-family="monospace"
               text-anchor="middle"
@@ -625,16 +621,16 @@ function handleImport(event: Event) {
         <div class="border border-line p-4 bg-surface flex flex-col gap-4">
       
           <div class="border-b border-line pb-1.5 flex justify-between items-center">
-            <span class="text-sm font-semibold tracking-wider text-accent">NEW RECORD</span>
+            <span class="text-sm font-semibold tracking-wider text-accent">{{ $t('bio.new.record') }}</span>
             <span class="text-[9px] text-neutral-500 font-mono uppercase tracking-widest">
-              {{ editingRecordId ? 'EDITING' : 'LOGGING' }}
+              {{ editingRecordId ? $t('bio.editing') : $t('bio.logging') }}
             </span>
           </div>
 
           <div class="flex flex-col gap-3">
             <div class="flex gap-3">
               <div class="flex-1 flex flex-col gap-1">
-                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">DATE</label>
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">{{ $t('bio.date') }}</label>
                 <input
                   v-model="inputDate"
                   type="date"
@@ -642,7 +638,7 @@ function handleImport(event: Event) {
                 />
               </div>
               <div class="flex-1 flex flex-col gap-1">
-                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">WT (KG) *</label>
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">{{ $t('bio.wt') }} (KG) *</label>
                 <input
                   v-model.number="inputWeight"
                   type="number"
@@ -655,7 +651,7 @@ function handleImport(event: Event) {
 
             <div class="flex gap-3">
               <div class="flex-1 flex flex-col gap-1">
-                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">BF%</label>
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">{{ $t('bio.bf') }}</label>
                 <input
                   v-model.number="inputBodyFat"
                   type="number"
@@ -665,14 +661,14 @@ function handleImport(event: Event) {
                 />
               </div>
               <div class="flex-1 flex flex-col gap-1">
-                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">W/H (CM)</label>
+                <label class="text-neutral-500 text-[10px] uppercase tracking-widest">{{ $t('bio.wh') }} (CM)</label>
                 <div class="flex gap-1.5">
                   <input
-                    v-model.number="inputWaist"
-                    type="number"
-                    step="0.5"
-                    placeholder="82"
-                    class="flex-1 border border-border-dim p-1.5 bg-base text-neutral-300 outline-none"
+                     v-model.number="inputWaist"
+                     type="number"
+                     step="0.5"
+                     placeholder="82"
+                     class="flex-1 border border-border-dim p-1.5 bg-base text-neutral-300 outline-none"
                   />
                   <input
                     v-model.number="inputHip"
@@ -686,27 +682,27 @@ function handleImport(event: Event) {
             </div>
 
             <div class="flex flex-col gap-1">
-              <label class="text-neutral-500 text-[10px] uppercase tracking-widest">NOTES</label>
+              <label class="text-neutral-500 text-[10px] uppercase tracking-widest">{{ $t('bio.notes') }}</label>
               <textarea
                 v-model="inputNote"
                 rows="2"
-                placeholder="e.g. morning run, diet, notes..."
+                :placeholder="$t('bio.notes.placeholder')"
                 class="border border-border-dim p-1.5 bg-base text-neutral-300 outline-none resize-none"
               ></textarea>
             </div>
 
             <button
               @click="handleAddRecord"
-              class="border border-line px-4 py-2 mt-2 text-xs bg-base text-neutral-300 hover:bg-neutral-200 hover:text-black transition-none cursor-pointer text-center font-bold"
+              class="border border-line px-4 py-2 mt-2 text-xs bg-base text-neutral-300 hover:bg-neutral-300 hover:text-accent transition-none cursor-pointer text-center font-bold"
             >
-              LOG RECORD
+              {{ $t('bio.log.record') }}
             </button>
         </div>
           </div>
         <!-- 1. Top Indexes and calculated properties -->
         <div class="border border-line p-4 bg-surface flex flex-col gap-3.5">
           <div class="border-b border-line pb-1.5 flex justify-between items-center">
-            <span class="text-xs font-semibold tracking-wider text-accent">BODY METRICS</span>
+            <span class="text-xs font-semibold tracking-wider text-accent">{{ $t('bio.body.metrics') }}</span>
             <span class="text-[9px] bg-base text-neutral-400 border border-border-dim px-2 py-0.5 font-mono">
               {{ gender === 'male' ? 'M' : 'F' }} / {{ age }}Y
             </span>
@@ -714,38 +710,38 @@ function handleImport(event: Event) {
 
           <div class="grid grid-cols-2 gap-3 text-center">
             <div class="border border-border-dim p-2 bg-base">
-              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">WEIGHT</p>
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">{{ $t('bio.weight') }}</p>
               <p class="text-base font-bold text-neutral-300 mt-1">{{ latestRecord ? latestRecord.weight : '--' }} <span class="text-[10px] text-neutral-600">kg</span></p>
             </div>
             <div class="border border-border-dim p-2 bg-base">
-              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">BODY FAT</p>
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">{{ $t('bio.bodyfat') }}</p>
               <p class="text-base font-bold text-neutral-300 mt-1">{{ (latestRecord && latestRecord.bodyFat) ? latestRecord.bodyFat : '--' }} <span class="text-[10px] text-neutral-600">%</span></p>
             </div>
             <div class="border border-border-dim p-2 bg-base">
-              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">BMR</p>
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">{{ $t('bio.bmr') }}</p>
               <p class="text-base font-bold text-accent mt-1">{{ bmr || '--' }} <span class="text-[10px] text-neutral-600">kcal</span></p>
             </div>
             <div class="border border-border-dim p-2 bg-base">
-              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">TDEE</p>
+              <p class="text-[10px] text-neutral-500 uppercase tracking-widest">{{ $t('bio.tdee') }}</p>
               <p class="text-base font-bold text-neutral-400 mt-1">{{ tdee || '--' }} <span class="text-[10px] text-neutral-600">kcal</span></p>
             </div>
           </div>
 
           <div class="flex flex-col gap-2.5 mt-1">
-            <!-- BMI Section -->
+            <!-- {{ $t('bio.bmi') }} Section -->
             <div class="border border-border-dim p-2.5 bg-base flex justify-between items-center text-xs">
               <div>
-                <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">BMI</span>
+                <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">{{ $t('bio.bmi') }}</span>
                 <span class="text-sm font-bold text-neutral-300">{{ bmi }}</span>
                 <span class="text-[9px] ml-1.5 font-mono" :class="bmiStatus.class">[{{ bmiStatus.label }}]</span>
               </div>
               <span class="text-[10px] text-neutral-600 text-right max-w-[100px] sm:max-w-[140px] leading-tight">{{ bmiStatus.desc }}</span>
             </div>
 
-            <!-- WHR Section -->
+            <!-- {{ $t('bio.whr') }} Section -->
             <div class="border border-border-dim p-2.5 bg-base flex justify-between items-center text-xs">
               <div>
-                <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">WHR</span>
+                <span class="text-[10px] text-neutral-500 block uppercase tracking-widest">{{ $t('bio.whr') }}</span>
                 <span class="text-sm font-bold text-neutral-300">{{ whr || '--' }}</span>
                 <span class="text-[9px] ml-1.5 font-mono" :class="whrStatus.class">[{{ whrStatus.label }}]</span>
               </div>
@@ -756,7 +752,7 @@ function handleImport(event: Event) {
           <!-- Goal Progress Bar -->
           <div class="border border-border-dim p-2.5 bg-base flex flex-col gap-1.5">
             <div class="flex justify-between items-center text-[10px]">
-              <span class="text-neutral-500 uppercase tracking-widest">TARGET {{ targetWeight }}kg</span>
+              <span class="text-neutral-500 uppercase tracking-widest">{{ $t('bio.target') }} {{ targetWeight }}kg</span>
               <span class="text-accent font-bold">{{ targetProgressPercent }}%</span>
             </div>
             <div class="w-full h-3 border border-border-dim bg-base relative overflow-hidden p-0.5">
@@ -771,32 +767,32 @@ function handleImport(event: Event) {
         <!-- 2. Configurations (Birth, Sex, Height, TargetWeight, Activity level) -->
         <div class="border border-line p-4 bg-surface flex flex-col gap-3 text-xs md:text-sm">
           <div class="border-b border-line pb-1.5">
-            <span class="text-xs font-semibold tracking-wider text-neutral-400 uppercase tracking-widest">CONFIGURATION</span>
+            <span class="text-xs font-semibold tracking-wider text-neutral-400 uppercase tracking-widest">{{ $t('bio.config') }}</span>
           </div>
 
           <div class="flex flex-col gap-2.5 text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-neutral-500">GENDER:</span>
+              <span class="text-neutral-500">{{ $t('bio.gender') }}:</span>
               <div class="flex gap-2">
                 <button
                   @click="gender = 'male'"
                   class="border px-2.5 py-0.5 text-[10px] transition-none cursor-pointer bg-transparent"
                   :class="[gender === 'male' ? 'bg-accent/20 border-accent text-neutral-300' : 'border-border-dim text-neutral-600']"
                 >
-                  MALE
+                  {{ $t('bio.male') }}
                 </button>
                 <button
                   @click="gender = 'female'"
                   class="border px-2.5 py-0.5 text-[10px] transition-none cursor-pointer bg-transparent"
                   :class="[gender === 'female' ? 'bg-accent/20 border-accent text-neutral-300' : 'border-border-dim text-neutral-600']"
                 >
-                  FEMALE
+                  {{ $t('bio.female') }}
                 </button>
               </div>
             </div>
 
             <div class="flex justify-between items-center">
-              <span class="text-neutral-500">BIRTH YEAR:</span>
+              <span class="text-neutral-500">{{ $t('bio.birth') }}:</span>
               <input
                 v-model.number="birthYear"
                 type="number"
@@ -807,7 +803,7 @@ function handleImport(event: Event) {
             </div>
 
             <div class="flex justify-between items-center">
-              <span class="text-neutral-500">HEIGHT (CM):</span>
+              <span class="text-neutral-500">{{ $t('bio.height') }} (CM):</span>
               <input
                 v-model.number="height"
                 type="number"
@@ -816,7 +812,7 @@ function handleImport(event: Event) {
             </div>
 
             <div class="flex justify-between items-center">
-              <span class="text-neutral-500">TARGET (KG):</span>
+              <span class="text-neutral-500">{{ $t('bio.target') }} (KG):</span>
               <input
                 v-model.number="targetWeight"
                 type="number"
@@ -826,26 +822,26 @@ function handleImport(event: Event) {
             </div>
 
             <div class="flex flex-col gap-1">
-              <span class="text-neutral-500">ACTIVITY LEVEL:</span>
+              <span class="text-neutral-500">{{ $t('bio.activity') }}:</span>
               <select
                 v-model.number="activityLevel"
                 class="border border-border-dim p-1 bg-base text-neutral-300 outline-none w-full font-mono"
               >
-                <option :value="1.2">SEDENTARY</option>
-                <option :value="1.375">LIGHT</option>
-                <option :value="1.55">MODERATE</option>
-                <option :value="1.725">HEAVY</option>
+                <option :value="1.2">{{ $t('bio.sedentary') }}</option>
+                <option :value="1.375">{{ $t('bio.light') }}</option>
+                <option :value="1.55">{{ $t('bio.moderate') }}</option>
+                <option :value="1.725">{{ $t('bio.heavy') }}</option>
               </select>
             </div>
           </div>
 
           <div class="border-t border-line pt-2.5 flex flex-col gap-2 mt-auto">
             <span class="text-[9px] text-neutral-600 text-center leading-normal uppercase tracking-widest">
-              Harris-Benedict Algorithm
+              {{ $t('bio.harris') }}
             </span>
             <div class="grid grid-cols-2 gap-2">
-              <button @click="resetToMock" class="border border-status-warn/50 text-status-warn py-1 text-[10px] cursor-pointer text-center font-bold transition-none">RESET</button>
-              <button @click="clearAllRecords" class="border border-status-bad/50 text-status-bad py-1 text-[10px] cursor-pointer text-center font-bold transition-none">CLEAR</button>
+              <button @click="resetToMock" class="border border-status-warn/50 text-status-warn py-1 text-[10px] cursor-pointer text-center font-bold transition-none">{{ $t('bio.reset') }}</button>
+              <button @click="clearAllRecords" class="border border-status-bad/50 text-status-bad py-1 text-[10px] cursor-pointer text-center font-bold transition-none">{{ $t('bio.clear') }}</button>
             </div>
           </div>
         </div>
@@ -858,12 +854,12 @@ function handleImport(event: Event) {
         <!-- Right: Log Chronicle Table -->
         <div class="border border-line p-4 bg-surface flex flex-col gap-3 ">
           <div class="border-b border-line pb-1.5 flex justify-between items-center">
-            <span class="text-sm font-semibold tracking-wider text-neutral-400 uppercase tracking-widest">HISTORY</span>
+            <span class="text-sm font-semibold tracking-wider text-neutral-400 uppercase tracking-widest">{{ $t('bio.history') }}</span>
             <div class="flex border border-border-dim bg-base overflow-hidden text-[9px]">
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="SEARCH..."
+                :placeholder="$t('bio.search')"
                 class="w-[120px] px-2 py-0.5 outline-none text-neutral-300 bg-transparent placeholder-neutral-600"
               />
             </div>
@@ -874,12 +870,12 @@ function handleImport(event: Event) {
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-surface border-b border-border-dim text-[10px] text-neutral-400 uppercase tracking-widest sticky top-0">
-                  <th class="p-1.5 sm:p-2 w-[60px] sm:w-[80px]">DATE</th>
-                  <th class="p-1.5 sm:p-2 w-[40px] sm:w-[55px]">WT</th>
-                  <th class="p-1.5 sm:p-2 w-[30px] sm:w-[40px] hidden sm:table-cell">BF%</th>
-                  <th class="p-1.5 sm:p-2 w-[40px] sm:w-[55px] hidden sm:table-cell">W/H</th>
-                  <th class="p-1.5 sm:p-2">NOTE</th>
-                  <th class="p-1.5 sm:p-2 text-right w-[55px] sm:w-[70px]">ACT</th>
+                  <th class="p-1.5 sm:p-2 w-[60px] sm:w-[80px]">{{ $t('bio.date') }}</th>
+                  <th class="p-1.5 sm:p-2 w-[40px] sm:w-[55px]">{{ $t('bio.wt') }}</th>
+                  <th class="p-1.5 sm:p-2 w-[30px] sm:w-[40px] hidden sm:table-cell">{{ $t('bio.bf') }}</th>
+                  <th class="p-1.5 sm:p-2 w-[40px] sm:w-[55px] hidden sm:table-cell">{{ $t('bio.wh') }}</th>
+                  <th class="p-1.5 sm:p-2">{{ $t('bio.notes') }}</th>
+                  <th class="p-1.5 sm:p-2 text-right w-[55px] sm:w-[70px]">{{ $t('action') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-border-dim text-[10px]">
@@ -896,8 +892,8 @@ function handleImport(event: Event) {
                     <td class="p-1.5 sm:p-2 font-mono whitespace-nowrap hidden sm:table-cell">{{ (r.waist && r.hip) ? `${r.waist}/${r.hip}` : '--' }}</td>
                     <td class="p-1.5 sm:p-2 text-neutral-500 truncate" :title="r.note">{{ r.note || '--' }}</td>
                     <td class="p-1.5 sm:p-2 text-right whitespace-nowrap">
-                      <button @click="startEdit(r)" class="text-accent hover:text-neutral-300 mr-2 cursor-pointer">EDIT</button>
-                      <button @click="deleteRecord(r.id)" class="text-status-bad hover:text-neutral-300 font-bold cursor-pointer">DEL</button>
+                      <button @click="startEdit(r)" class="text-accent hover:text-neutral-300 mr-2 cursor-pointer">{{ $t('edit') }}</button>
+                      <button @click="deleteRecord(r.id)" class="text-status-bad hover:text-neutral-300 font-bold cursor-pointer">{{ $t('destroy') }}</button>
                     </td>
                   </template>
 
@@ -920,13 +916,13 @@ function handleImport(event: Event) {
                       <input v-model="editNote" type="text" class="border border-border-dim bg-base text-[8px] p-0.5 text-neutral-300 w-full" placeholder="..." />
                     </td>
                     <td class="p-1 text-right whitespace-nowrap">
-                      <button @click="saveEdit(r.id)" class="text-status-good font-bold mr-1 cursor-pointer">SAVE</button>
-                      <button @click="cancelEdit" class="text-neutral-500 cursor-pointer">ESC</button>
+                      <button @click="saveEdit(r.id)" class="text-status-good font-bold mr-1 cursor-pointer">{{ $t('commit') }}</button>
+                      <button @click="cancelEdit" class="text-neutral-500 cursor-pointer">{{ $t('abort') }}</button>
                     </td>
                   </template>
                 </tr>
                 <tr v-if="filteredHistoryRecords.length === 0">
-                  <td colspan="6" class="p-4 text-center text-neutral-600 italic font-mono">NO RECORDS FOUND.</td>
+                  <td colspan="6" class="p-4 text-center text-neutral-600 italic font-mono">{{ $t('bio.no.results') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -938,11 +934,11 @@ function handleImport(event: Event) {
     <div class="flex justify-between items-center border-t border-line pt-4 mt-2">
       <div class="flex gap-2">
         <input type="file" ref="fileInput" @change="handleImport" class="hidden" />
-        <button @click="exportData" class="border border-border-dim px-3 py-1.5 text-[10px] bg-base text-neutral-400 hover:text-black transition-none font-bold cursor-pointer">
-          EXPORT JSON
+        <button @click="exportData" class="border border-border-dim px-3 py-1.5 text-[10px] bg-base text-neutral-400 hover:text-accent transition-none font-bold cursor-pointer">
+          {{ $t('bio.export_json') }}
         </button>
-        <button @click="triggerImport" class="border border-border-dim px-3 py-1.5 text-[10px] bg-base text-neutral-400 hover:text-black transition-none font-bold cursor-pointer">
-          IMPORT JSON
+        <button @click="triggerImport" class="border border-border-dim px-3 py-1.5 text-[10px] bg-base text-neutral-400 hover:text-accent transition-none font-bold cursor-pointer">
+          {{ $t('bio.import_json') }}
         </button>
       </div>
     </div>

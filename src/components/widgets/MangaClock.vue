@@ -123,10 +123,6 @@ onUnmounted(() => { clearInterval(timer); clearInterval(pInterval) })
 
   <!-- Full mode -->
   <div v-else class="w-full select-none text-neutral-300 flex flex-col gap-5">
-    <div class="flex items-center justify-between border-b border-line pb-2.5">
-      <span class="text-xs uppercase tracking-widest text-neutral-500">[ CLOCK & POMODORO ]</span>
-    </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
       <!-- Left: World Clock -->
       <div class="lg:col-span-3 border border-line p-4 bg-surface flex flex-col justify-between min-h-[350px]">
@@ -139,22 +135,22 @@ onUnmounted(() => { clearInterval(timer); clearInterval(pInterval) })
         </div>
 
         <div class="flex flex-col gap-2 mt-4">
-          <span class="text-[10px] text-neutral-600 tracking-wider uppercase font-bold">// WORLD TIMEZONES</span>
+          <span class="text-[10px] text-neutral-600 tracking-wider uppercase font-bold">{{ $t('clock.world.time') }}</span>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div class="border border-border-dim p-2 bg-base flex flex-col gap-0.5">
-              <span class="text-[9px] text-neutral-600">BEIJING</span>
+              <span class="text-[9px] text-neutral-600">{{ $t('clock.beijing') }}</span>
               <span class="text-xs font-mono font-bold text-neutral-300 mt-0.5">{{ timeZoneData.beijing }}</span>
             </div>
             <div class="border border-border-dim p-2 bg-base flex flex-col gap-0.5">
-              <span class="text-[9px] text-neutral-600">TOKYO</span>
+              <span class="text-[9px] text-neutral-600">{{ $t('clock.tokyo') }}</span>
               <span class="text-xs font-mono font-bold text-neutral-300 mt-0.5">{{ timeZoneData.tokyo }}</span>
             </div>
             <div class="border border-border-dim p-2 bg-base flex flex-col gap-0.5">
-              <span class="text-[9px] text-neutral-600">LONDON</span>
+              <span class="text-[9px] text-neutral-600">{{ $t('clock.london') }}</span>
               <span class="text-xs font-mono font-bold text-neutral-300 mt-0.5">{{ timeZoneData.london }}</span>
             </div>
             <div class="border border-border-dim p-2 bg-base flex flex-col gap-0.5">
-              <span class="text-[9px] text-neutral-600">NEW YORK</span>
+              <span class="text-[9px] text-neutral-600">{{ $t('clock.newyork') }}</span>
               <span class="text-xs font-mono font-bold text-neutral-300 mt-0.5">{{ timeZoneData.newyork }}</span>
             </div>
           </div>
@@ -164,7 +160,7 @@ onUnmounted(() => { clearInterval(timer); clearInterval(pInterval) })
       <!-- Right: Pomodoro -->
       <div class="lg:col-span-2 border border-line p-4 bg-surface flex flex-col justify-between min-h-[350px]">
         <div class="border-b border-line pb-1.5 flex justify-between items-center">
-          <span class="text-xs font-semibold text-accent tracking-wider uppercase">POMODORO</span>
+          <span class="text-xs font-semibold text-accent tracking-wider uppercase">{{ $t('clock.pomodoro') }}</span>
           <span class="text-[8px] bg-base border border-line text-neutral-400 px-1.5 py-0.2 font-mono uppercase tracking-widest font-bold">{{ pomodoroState }}</span>
         </div>
 
@@ -174,7 +170,7 @@ onUnmounted(() => { clearInterval(timer); clearInterval(pInterval) })
             {{ String(pomodoroMinutes).padStart(2, '0') }}:{{ String(pomodoroSeconds).padStart(2, '0') }}
           </div>
           <span class="text-[9px] text-neutral-600 mt-1">
-            {{ pomodoroState === 'completed' ? 'DONE' : 'FOCUS MODE' }}
+            {{ pomodoroState === 'completed' ? 'DONE' : $t('clock.focus') }}
           </span>
         </div>
 
@@ -190,16 +186,16 @@ onUnmounted(() => { clearInterval(timer); clearInterval(pInterval) })
 
         <div class="flex gap-2.5 mt-4">
           <button v-if="pomodoroState !== 'running'" @click="startPomodoro"
-            class="flex-1 bg-base border border-line text-neutral-400 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 py-2 text-xs font-bold cursor-pointer transition-none">
-            START
+            class="flex-1 bg-base border border-line text-neutral-400 hover:bg-neutral-300 hover:text-accent hover:border-neutral-300 py-2 text-xs font-bold cursor-pointer transition-none">
+            {{ $t('clock.start') }}
           </button>
           <button v-else @click="pausePomodoro"
             class="flex-1 bg-surface border border-line text-neutral-400 hover:text-neutral-300 py-2 text-xs font-bold cursor-pointer transition-none">
-            PAUSE
+            {{ $t('clock.pause') }}
           </button>
           <button @click="resetPomodoro"
-            class="border border-line text-neutral-500 hover:bg-neutral-200 hover:text-black hover:border-neutral-200 px-4 py-2 text-xs font-bold cursor-pointer transition-none">
-            RESET
+            class="border border-line text-neutral-500 hover:bg-neutral-300 hover:text-accent hover:border-neutral-300 px-4 py-2 text-xs font-bold cursor-pointer transition-none">
+            {{ $t('bio.reset') }}
           </button>
         </div>
       </div>

@@ -8,6 +8,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import SQLModel, Session, select
 from sqlalchemy import create_engine, delete
 from typing import List
+import time
+import socket
+import psutil
+import urllib.request
+import json
+from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
 
 from models import User, UserConfig, NavGroup, NavItem, TodoItem, Note, WeightRecord, SnippetItem, CountdownItem, UserCreate, Token, UserOut, SyncPayload
 from auth import verify_password, get_password_hash, create_access_token, get_current_user_id
@@ -221,3 +228,166 @@ def push_sync(payload: SyncPayload, user_id: int = Depends(get_current_user_id),
 
     session.commit()
     return {"status": "success", "message": "星谱数据云端覆盖同步成功！"}
+
+# ==================== 3. 硬件遥测与系统监控 API ====================
+
+@app.get("/api/sysinfo/telemetry")
+def get_sys_telemetry(user_id: int = Depends(get_current_user_id)):
+    """获取服务器主机的 CPU、RAM、分区及 TOP 进程遥测数据"""
+    # 1. CPU 与内存
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    virtual_mem = psutil.virtual_memory()
+    ram_percent = virtual_mem.percent
+
+    # 2. 本地固定硬盘分区空间
+    partitions_data = []
+    for part in psutil.disk_partitions():
+        # 排除网络挂载和光盘
+        if 'cdrom' in part.opts or 'fixed' not in part.opts.lower():
+            if os.name == 'nt' and 'cdrom' in part.opts:
+                continue
+        try:
+            usage = psutil.disk_usage(part.mountpoint)
+            partitions_data.append({
+                "name": part.mountpoint,
+                "used": round(usage.percent, 1),
+                "total": f"{usage.total / (1024**3):.1f} GB"
+            })
+        except Exception:
+            continue
+
+    # 3. 最占内存的活跃进程列表 Top 8
+    processes_data = []
+    for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'cmdline']):
+        try:
+            pinfo = proc.info
+            mem_pct = pinfo['memory_percent'] or 0.0
+            cpu_pct = pinfo['cpu_percent'] or 0.0
+            
+            # cmdline 转成简短参数说明
+            cmd_args = pinfo['cmdline']
+            desc = " ".join(cmd_args[:3]) if cmd_args else "background daemon"
+            
+            processes_data.append({
+                "id": pinfo['pid'],
+                "pid": pinfo['pid'],
+                "name": pinfo['name'] or "unknown",
+                "desc": desc,
+                "cpu": round(cpu_pct, 1),
+                "mem": round(mem_pct, 1),
+                "status": "running"
+            })
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+    processes_data = sorted(processes_data, key=lambda p: p['mem'], reverse=True)[:8]
+
+    return {
+        "cpu": cpu_percent,
+        "ram": ram_percent,
+        "partitions": partitions_data[:3],
+        "processes": processes_data,
+        "uptime": int(time.time() - psutil.boot_time())
+    }
+
+class KillPayload(BaseModel):
+    pid: int
+
+@app.post("/api/sysinfo/kill")
+def kill_process(payload: KillPayload, user_id: int = Depends(get_current_user_id)):
+    """温和地释放/杀死指定 PID 进程"""
+    try:
+        proc = psutil.Process(payload.pid)
+        proc.terminate()
+        return {"status": "success", "message": f"Process {payload.pid} terminated."}
+    except psutil.NoSuchProcess:
+        raise HTTPException(status_code=404, detail="Process not found.")
+    except psutil.AccessDenied:
+        raise HTTPException(status_code=403, detail="Access denied.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== 4. 网络诊断与 TCP 延迟测试 API ====================
+
+class ProbePayload(BaseModel):
+    host: str
+
+@app.post("/api/network/probe")
+def probe_network(payload: ProbePayload, user_id: int = Depends(get_current_user_id)):
+    """利用后端连接测试目标节点 443 / 80 端口时延，突破前端 CORS 阻断"""
+    host = payload.host.strip()
+    if "://" in host:
+        host = host.split("://")[1]
+    if "/" in host:
+        host = host.split("/")[0]
+    if ":" in host:
+        host = host.split(":")[0]
+
+    start = time.perf_counter()
+    try:
+        ip = socket.gethostbyname(host)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.5)
+        s.connect((ip, 443))
+        s.close()
+        latency = (time.perf_counter() - start) * 1000
+        return {"status": "success", "latency": round(latency, 1)}
+    except Exception:
+        try:
+            start_retry = time.perf_counter()
+            ip = socket.gethostbyname(host)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2.5)
+            s.connect((ip, 80))
+            s.close()
+            latency = (time.perf_counter() - start_retry) * 1000
+            return {"status": "success", "latency": round(latency, 1)}
+        except Exception:
+            return {"status": "failed", "latency": None}
+
+# ==================== 5. 大模型 AI 代理中转与流式响应 (SSE) ====================
+
+class ChatPayload(BaseModel):
+    messages: list
+
+@app.post("/api/ai/chat")
+def chat_agent(payload: ChatPayload, user_id: int = Depends(get_current_user_id), session: Session = Depends(get_session)):
+    """安全代理托管：通过后端托管 API Key 进行对话并进行 SSE 流式分发"""
+    config = session.exec(select(UserConfig).where(UserConfig.user_id == user_id)).first()
+    
+    # 优先读后台环境变量，其次读数据库存储
+    api_key = os.getenv("OPENAI_API_KEY", "") or (config.openai_key if config else "")
+    api_base = os.getenv("OPENAI_API_BASE", "") or (config.openai_base if config else "https://api.deepseek.com")
+    api_model = os.getenv("OPENAI_API_MODEL", "") or (config.openai_model if config else "deepseek-chat")
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="AI_KEY_NOT_CONFIGURED")
+
+    def event_generator():
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        req_data = {
+            "model": api_model,
+            "messages": payload.messages,
+            "stream": True
+        }
+        req = urllib.request.Request(
+            f"{api_base.rstrip('/')}/chat/completions",
+            data=json.dumps(req_data).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                for line in response:
+                    decoded = line.decode("utf-8").strip()
+                    if not decoded:
+                        continue
+                    yield f"{decoded}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
