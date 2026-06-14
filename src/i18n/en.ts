@@ -109,6 +109,13 @@ export const en = {
   'widget.countdown': 'TIMER',
   'widget.radio': 'CHIP_TUNE',
 
+  // ── Widget: Radio ──
+  'radio.console.open': '[ OPEN RECEIVER CONSOLE ]',
+  'radio.station': 'CURRENT STATION',
+  'radio.static': 'Tuning Static...',
+  'radio.tuning': 'TUNING KNOB',
+  'radio.mhz': 'MHz',
+
   // ── Widget: Clock ──
   'clock.title': '[ CLOCK & POMODORO ]',
   'clock.world.time': '// WORLD TIMEZONES',

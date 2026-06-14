@@ -109,6 +109,13 @@ export const zh = {
   'widget.countdown': '倒计时',
   'widget.radio': '复古电台',
 
+  // ── Widget: Radio ──
+  'radio.console.open': '[ 打开调频面板 ]',
+  'radio.station': '当前波段 STATION',
+  'radio.static': '电磁搜台声...',
+  'radio.tuning': '调谐旋钮 TUNING',
+  'radio.mhz': '兆赫 MHz',
+
   // ── Widget: Clock ──
   'clock.title': '[ 时钟 & 番茄钟 ]',
   'clock.world.time': '// 世界时区',

@@ -624,6 +624,8 @@ onUnmounted(() => {
   if (feedbackTimeout) clearTimeout(feedbackTimeout)
   window.removeEventListener('manga-weather-updated', updateWeatherIconFromCache)
   window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('mousemove', handleResizeMove)
+  window.removeEventListener('mouseup', handleResizeEnd)
 })
 
 // ── 右侧侧边滑出抽屉逻辑 ──
@@ -767,6 +769,62 @@ function handleCommandSubmit() {
   else {
     showFeedback(`ERROR: UNKNOWN_COMMAND: /${commandName}`, 'error')
   }
+}
+
+// ── 磁贴自由拉伸缩放逻辑 ──
+const activeResizingItem = ref<any>(null)
+let startX = 0
+let startY = 0
+let startSize: 'normal' | 'wide' | 'tall' | 'large' = 'normal'
+
+function startResizeItem(item: any, e: MouseEvent) {
+  activeResizingItem.value = item
+  startX = e.clientX
+  startY = e.clientY
+  startSize = item.size || 'normal'
+  window.addEventListener('mousemove', handleResizeMove)
+  window.addEventListener('mouseup', handleResizeEnd)
+}
+
+function handleResizeMove(e: MouseEvent) {
+  if (!activeResizingItem.value) return
+  const dx = e.clientX - startX
+  const dy = e.clientY - startY
+  
+  const thresholdX = 60
+  const thresholdY = 60
+  
+  let cols = (startSize === 'wide' || startSize === 'large') ? 2 : 1
+  let rows = (startSize === 'tall' || startSize === 'large') ? 2 : 1
+  
+  if (dx > thresholdX) {
+    cols = 2
+  } else if (dx < -thresholdX) {
+    cols = 1
+  }
+  
+  if (dy > thresholdY) {
+    rows = 2
+  } else if (dy < -thresholdY) {
+    rows = 1
+  }
+  
+  let newSize: 'normal' | 'wide' | 'tall' | 'large' = 'normal'
+  if (cols === 2 && rows === 2) newSize = 'large'
+  else if (cols === 2 && rows === 1) newSize = 'wide'
+  else if (cols === 1 && rows === 2) newSize = 'tall'
+  else newSize = 'normal'
+  
+  if (activeResizingItem.value.size !== newSize) {
+    activeResizingItem.value.size = newSize
+    updateItem(activeResizingItem.value.id, { ...activeResizingItem.value, size: newSize })
+  }
+}
+
+function handleResizeEnd() {
+  activeResizingItem.value = null
+  window.removeEventListener('mousemove', handleResizeMove)
+  window.removeEventListener('mouseup', handleResizeEnd)
 }
 </script>
 
@@ -1205,7 +1263,7 @@ function handleCommandSubmit() {
                 :href="isWidgetItem(item) ? 'javascript:void(0)' : item.url"
                 :target="isWidgetItem(item) ? '_self' : '_blank'"
                 @click="handleItemClick(item, $event)"
-                :draggable="true"
+                :draggable="!activeResizingItem"
                 @dragstart="handleItemDragStart(item.id, $event)"
                 @dragover="handleItemDragOver(item.id, $event)"
                 @drop="handleItemDrop(item.id, $event)"
