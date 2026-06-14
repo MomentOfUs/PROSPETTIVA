@@ -887,7 +887,7 @@ onUnmounted(() => {
                     </svg>
 
                     <!-- 2. AI 对话: 可爱圆润机器人 SVG，5种表情循环 -->
-                    <!-- 2. AI 对话: 极简双眼张望与眨眼动效机器人 SVG -->
+                    <!-- 2. AI 对话: 极简双眼张望与眨眼动效机器人 SVG (支持5种可爱表情切换与呼吸荧光) -->
                     <svg v-else-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'aichat'"
                       viewBox="0 0 44 44"
                       class="w-9 h-9 sm:w-11 sm:h-11"
@@ -908,17 +908,60 @@ onUnmounted(() => {
                         <!-- 右耳 (半圆) -->
                         <path d="M39 16 Q43 22 39 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
 
-                        <!-- 眼球张望层 -->
-                        <g class="animate-ai-look">
-                          <!-- 左眼 (带眨眼) -->
-                          <g class="animate-ai-blink-left">
-                            <circle cx="15" cy="19" r="3.5" fill="currentColor"/>
-                            <circle cx="16.2" cy="17.8" r="1.1" fill="white" opacity="0.85"/>
+                        <!-- 呼吸荧光层 -->
+                        <g class="animate-ai-glow">
+                          <!-- === 表情0: 极简双眼张望与自然眨眼 === -->
+                          <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 0 ? 'opacity-100' : 'opacity-0'">
+                            <g class="animate-ai-look">
+                              <!-- 左眼 -->
+                              <g class="animate-ai-blink-left">
+                                <circle cx="15" cy="19" r="3.5" fill="currentColor"/>
+                                <circle cx="16.2" cy="17.8" r="1.1" fill="white" opacity="0.85"/>
+                              </g>
+                              <!-- 右眼 -->
+                              <g class="animate-ai-blink-right">
+                                <circle cx="29" cy="19" r="3.5" fill="currentColor"/>
+                                <circle cx="30.2" cy="17.8" r="1.1" fill="white" opacity="0.85"/>
+                              </g>
+                            </g>
                           </g>
-                          <!-- 右眼 (带眨眼) -->
-                          <g class="animate-ai-blink-right">
-                            <circle cx="29" cy="19" r="3.5" fill="currentColor"/>
-                            <circle cx="30.2" cy="17.8" r="1.1" fill="white" opacity="0.85"/>
+
+                          <!-- === 表情1: 眯眼笑 ^^ (带弹跳动效) === -->
+                          <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 1 ? 'opacity-100' : 'opacity-0'">
+                            <g class="animate-ai-happy-bounce" style="transform-origin: 22px 19px;">
+                              <path d="M11.5 20.5 Q15 16.5 18.5 20.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                              <path d="M25.5 20.5 Q29 16.5 32.5 20.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                            </g>
+                          </g>
+
+                          <!-- === 表情2: 震惊 O O (带颤动与放大) === -->
+                          <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 2 ? 'opacity-100' : 'opacity-0'">
+                            <g class="animate-ai-shock-shake" style="transform-origin: 22px 19px;">
+                              <circle cx="15" cy="19" r="4.8" fill="currentColor"/>
+                              <circle cx="16.5" cy="17.2" r="1.4" fill="white" opacity="0.9"/>
+                              <circle cx="29" cy="19" r="4.8" fill="currentColor"/>
+                              <circle cx="30.5" cy="17.2" r="1.4" fill="white" opacity="0.9"/>
+                            </g>
+                          </g>
+
+                          <!-- === 表情3: 委屈/难过 > < === -->
+                          <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 3 ? 'opacity-100' : 'opacity-0'">
+                            <path d="M12 16.5 L17 19.5 L12 22.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <path d="M32 16.5 L27 19.5 L32 22.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                          </g>
+
+                          <!-- === 表情4: 爱心眼 ♥ ♥ (带呼吸缩放) === -->
+                          <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 4 ? 'opacity-100' : 'opacity-0'">
+                            <!-- 左心 -->
+                            <path d="M 15 21.2 C 11 18 10 15 13.5 15 C 15 15 15 16.5 15 16.5 C 15 16.5 15 15 16.5 15 C 20 15 19 18 15 21.2 Z" 
+                              fill="currentColor" 
+                              class="animate-ai-love-pulse-left"
+                            />
+                            <!-- 右心 -->
+                            <path d="M 29 21.2 C 25 18 24 15 27.5 15 C 29 15 29 16.5 29 16.5 C 29 16.5 29 15 30.5 15 C 34 15 33 18 29 21.2 Z" 
+                              fill="currentColor" 
+                              class="animate-ai-love-pulse-right"
+                            />
                           </g>
                         </g>
                       </g>
@@ -1501,5 +1544,47 @@ onUnmounted(() => {
 .animate-ai-blink-right {
   animation: aiBlink 3.5s ease-in-out infinite;
   transform-origin: 29px 19px;
+}
+
+/* 呼吸荧光 (Neon Glow) Effect */
+@keyframes aiGlow {
+  0%, 100% { filter: drop-shadow(0 0 1.5px currentColor); }
+  50% { filter: drop-shadow(0 0 4.5px currentColor); }
+}
+.animate-ai-glow {
+  animation: aiGlow 2.5s ease-in-out infinite;
+}
+
+/* 表情1: 眯眼弹跳 (Happy Bounce) */
+@keyframes aiHappyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.8px); }
+}
+.animate-ai-happy-bounce {
+  animation: aiHappyBounce 0.55s ease-in-out infinite;
+}
+
+/* 表情2: 震惊颤动 (Shock Shake) */
+@keyframes aiShockShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-0.4px, 0.4px); }
+  75% { transform: translate(0.4px, -0.4px); }
+}
+.animate-ai-shock-shake {
+  animation: aiShockShake 0.15s linear infinite;
+}
+
+/* 表情4: 爱心跳动 (Love Pulse) */
+@keyframes aiLovePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.animate-ai-love-pulse-left {
+  animation: aiLovePulse 0.75s ease-in-out infinite;
+  transform-origin: 15px 18px;
+}
+.animate-ai-love-pulse-right {
+  animation: aiLovePulse 0.75s ease-in-out infinite;
+  transform-origin: 29px 18px;
 }
 </style>
