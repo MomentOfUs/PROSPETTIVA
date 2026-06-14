@@ -602,9 +602,15 @@ onMounted(async () => {
   isAppLoading.value = false; initCanvas()
   systemTimeInterval = setInterval(updateSystemTime, 1000)
   window.addEventListener('keydown', handleGlobalKeydown)
+  window.addEventListener('manga-close-widget-modal', handleCloseWidgetModal)
 })
 
+const handleCloseWidgetModal = () => {
+  showWidgetModal.value = false
+}
+
 onUnmounted(() => {
+  window.removeEventListener('manga-close-widget-modal', handleCloseWidgetModal)
   destroyCanvas()
   if (systemTimeInterval) clearInterval(systemTimeInterval)
   window.removeEventListener('artisan-request-cloud-push', queueCloudPush)
@@ -626,6 +632,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
   window.removeEventListener('mousemove', handleResizeMove)
   window.removeEventListener('mouseup', handleResizeEnd)
+  document.body.classList.remove('is-resizing')
 })
 
 // ── 右侧侧边滑出抽屉逻辑 ──
@@ -782,6 +789,7 @@ function startResizeItem(item: any, e: MouseEvent) {
   startX = e.clientX
   startY = e.clientY
   startSize = item.size || 'normal'
+  document.body.classList.add('is-resizing')
   window.addEventListener('mousemove', handleResizeMove)
   window.addEventListener('mouseup', handleResizeEnd)
 }
@@ -823,6 +831,7 @@ function handleResizeMove(e: MouseEvent) {
 
 function handleResizeEnd() {
   activeResizingItem.value = null
+  document.body.classList.remove('is-resizing')
   window.removeEventListener('mousemove', handleResizeMove)
   window.removeEventListener('mouseup', handleResizeEnd)
 }
@@ -2064,5 +2073,17 @@ function handleResizeEnd() {
 .animate-ai-love-pulse-right {
   animation: aiLovePulse 0.75s ease-in-out infinite;
   transform-origin: 29px 18px;
+}
+
+/* ── 拖拽缩放进行时的全局防护样式 ── */
+:global(body.is-resizing) {
+  cursor: se-resize !important;
+}
+:global(body.is-resizing) * {
+  cursor: se-resize !important;
+  user-select: none !important;
+}
+:global(body.is-resizing) .group\/card {
+  pointer-events: none !important;
 }
 </style>
