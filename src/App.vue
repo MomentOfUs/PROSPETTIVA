@@ -1330,7 +1330,7 @@ function handleResizeEnd() {
                 <div
                   class="icon-tile flex items-center justify-center transition-none group-hover/card:border-accent active:scale-95 cursor-grab active:cursor-grabbing overflow-hidden border border-line shrink-0"
                   :class="[
-                    (item.size === 'wide' || item.size === 'large') ? 'w-full h-16 sm:h-20' : 'w-16 h-16 sm:w-20 sm:h-20'
+                    (item.size === 'wide' || item.size === 'tall' || item.size === 'large') ? 'w-full flex-1' : 'w-16 h-16 sm:w-20 sm:h-20'
                   ]"
                   :style="{ backgroundColor: item.color }"
                 >

@@ -2,10 +2,10 @@
 // ── 外部 Module Scope：常驻内存单例，保证弹窗关闭后 Web Audio 继续运行 ──
 import { ref, watch, computed } from 'vue'
 
-const isPlaying = ref(false)
-const masterVolume = ref(0.4)
+export const isPlaying = ref(false)
+export const masterVolume = ref(0.4)
 
-// 5 种不同风格的电台定义
+// 7 种不同风格的电台定义
 interface Station {
   id: string
   name: string
@@ -25,77 +25,93 @@ interface Station {
 
 const STATIONS: Station[] = [
   {
-    id: 'focus',
-    name: 'DEEP_FOCUS',
-    fm: '91.2',
-    descZh: '深度沉浸学习流，低沉硬件嗡嗡电磁声',
-    descEn: 'Deep cognitive flow with heavy electromagnetic hum',
-    chans: { rain: 0.05, melody: 0.25, crackle: 0.00, hum: 0.60 },
+    id: 'cyber',
+    name: 'CYBER_WASTE',
+    fm: '88.5',
+    descZh: '赛博废土工业流。超重飞船引擎轰鸣电磁背景，伴随冰冷机械方波音序',
+    descEn: 'Cyber industrial wasteland. Heavy engine electromagnetism with cold square sequence',
+    chans: { rain: 0.30, melody: 0.45, crackle: 0.30, hum: 0.85 },
     chords: [
-      [220.00, 261.63, 329.63, 440.00, 329.63, 261.63, 220.00, 261.63], // Am
-      [174.61, 220.00, 261.63, 329.63, 261.63, 220.00, 174.61, 220.00]  // Fmaj7
+      [110.00, 110.00, 130.81, 110.00, 146.83, 110.00, 164.81, 110.00], // F#m / Fills
+      [110.00, 110.00, 130.81, 110.00, 146.83, 110.00, 130.81, 98.00]
     ],
-    tempo: 380,
+    tempo: 190,
+    oscType: 'square'
+  },
+  {
+    id: 'focus',
+    name: 'DREAM_VOID',
+    fm: '91.2',
+    descZh: '梦核(Dreamcore)空间。VHS磁带跑调颤音配合迷离的大七/增减和弦',
+    descEn: 'Dreamcore void. VHS flutter modulation with weird suspense major 7th chords',
+    chans: { rain: 0.10, melody: 0.22, crackle: 0.05, hum: 0.65 },
+    chords: [
+      [220.00, 277.18, 329.63, 415.30, 329.63, 277.18, 220.00, 277.18], // Amaj7
+      [220.00, 261.63, 311.13, 392.00, 311.13, 261.63, 220.00, 261.63], // Am(maj7)
+      [196.00, 246.94, 293.66, 369.99, 293.66, 246.94, 196.00, 246.94], // Gmaj7
+      [174.61, 220.00, 261.63, 349.23, 261.63, 220.00, 174.61, 220.00]  // Fmaj7
+    ],
+    tempo: 450,
     oscType: 'triangle'
   },
   {
     id: 'rain',
-    name: 'TOKYO_RAIN',
+    name: 'Y2K_PULSE',
     fm: '96.5',
-    descZh: '涩谷雨夜，重低音雨声配以温柔七和弦',
-    descEn: 'Neon rainy nights in Tokyo with soft jazz progression',
-    chans: { rain: 0.80, melody: 0.22, crackle: 0.00, hum: 0.20 },
+    descZh: '千禧年未来主义科技流。雨声白噪象征数据流，搭配数字感跃动音轨',
+    descEn: 'Y2K millennial cyber pulse. Rain representing data streams with digital scales',
+    chans: { rain: 0.85, melody: 0.20, crackle: 0.00, hum: 0.25 },
     chords: [
-      [261.63, 329.63, 392.00, 493.88, 392.00, 329.63, 261.63, 329.63], // Cmaj7
-      [220.00, 261.63, 329.63, 392.00, 329.63, 261.63, 220.00, 261.63], // Am7
-      [293.66, 349.23, 440.00, 523.25, 440.00, 349.23, 293.66, 349.23]  // Dm7
+      [293.66, 349.23, 440.00, 523.25, 440.00, 349.23, 293.66, 349.23], // Dm7
+      [349.23, 440.00, 523.25, 659.25, 523.25, 440.00, 349.23, 440.00], // Fmaj7
+      [392.00, 493.88, 587.33, 698.46, 587.33, 493.88, 392.00, 493.88]  // G7
     ],
-    tempo: 320,
+    tempo: 280,
     oscType: 'triangle'
   },
   {
     id: 'camp',
-    name: 'COZY_CAMP',
+    name: 'RETRO_WAVE',
     fm: '101.3',
-    descZh: '林间野营篝火，清脆的木柴爆裂声与舒缓大调',
-    descEn: 'Forest campfire soundscape with warm acoustic major chords',
-    chans: { rain: 0.15, melody: 0.35, crackle: 0.75, hum: 0.00 },
+    descZh: '上世纪80年代宇宙模拟合成器。黑胶静电爆裂颗粒与怀古探索旋律',
+    descEn: '80s cosmos synthesizer. Vinyl crackling grain with classic space exploration chords',
+    chans: { rain: 0.10, melody: 0.35, crackle: 0.70, hum: 0.15 },
     chords: [
-      [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 329.63], // C
-      [196.00, 246.94, 293.66, 392.00, 293.66, 246.94, 196.00, 246.94], // G
-      [220.00, 261.63, 329.63, 440.00, 329.63, 261.63, 220.00, 261.63]  // Am
+      [110.00, 164.81, 220.00, 261.63, 329.63, 261.63, 220.00, 164.81], // Am
+      [87.31, 130.81, 174.61, 220.00, 261.63, 220.00, 174.61, 130.81],  // F
+      [98.00, 146.83, 196.00, 246.94, 293.66, 246.94, 196.00, 146.83]   // G
     ],
-    tempo: 360,
+    tempo: 400,
     oscType: 'triangle'
   },
   {
     id: 'arcade',
     name: 'CHIP_DUNGEON',
     fm: '104.8',
-    descZh: '红白机像素地城，欢快紧凑的方波琶音进行',
-    descEn: '8-Bit retro gaming dungeon with fast square wave arpeggios',
+    descZh: '红白机NES像素地城。断奏极强的断音方波，红白机经典冒险风格',
+    descEn: 'NES/GameBoy retro gaming dungeon. Plucky staccato square arpeggios',
     chans: { rain: 0.00, melody: 0.40, crackle: 0.15, hum: 0.10 },
     chords: [
       [164.81, 196.00, 246.94, 329.63, 392.00, 329.63, 246.94, 196.00], // Em
       [130.81, 164.81, 196.00, 261.63, 329.63, 261.63, 196.00, 164.81], // C
       [146.83, 185.00, 220.00, 293.66, 369.99, 293.66, 220.00, 185.00]  // D
     ],
-    tempo: 190,
+    tempo: 160,
     oscType: 'square'
   },
   {
     id: 'cafe',
-    name: 'LOFI_JAZZ',
+    name: 'SPACE_AMBIENT',
     fm: '107.2',
-    descZh: '午后爵士咖啡馆，伴有杯具敲击的慵懒 Swing 调',
-    descEn: 'Cozy afternoon cafe with lazy jazz swing & cup clinks',
-    chans: { rain: 0.10, melody: 0.30, crackle: 0.55, hum: 0.05 },
+    descZh: '深空科幻漫游。飞船生命维持电磁声铺底，宇宙孤寂高频音符微弱闪烁',
+    descEn: 'Sci-Fi deep space odyssey. Life-support spaceship hum with high-pitched notes',
+    chans: { rain: 0.05, melody: 0.25, crackle: 0.10, hum: 0.75 },
     chords: [
-      [349.23, 440.00, 523.25, 659.25, 523.25, 440.00, 349.23, 440.00], // Fmaj7
-      [329.63, 392.00, 493.88, 587.33, 493.88, 392.00, 329.63, 392.00], // Em7
-      [440.00, 554.37, 659.25, 783.99, 659.25, 554.37, 440.00, 554.37]  // A7
+      [523.25, 659.25, 783.99, 987.77, 1046.50, 987.77, 783.99, 659.25], // Cmaj7 (Very high)
+      [415.30, 523.25, 622.25, 783.99, 830.61, 783.99, 622.25, 523.25], // Abmaj7
+      [311.13, 392.00, 466.16, 587.33, 622.25, 587.33, 466.16, 392.00]  // Ebmaj7
     ],
-    tempo: 420,
+    tempo: 680,
     oscType: 'triangle'
   }
 ]
@@ -256,11 +272,21 @@ function triggerMelodyStep() {
   osc.type = station.oscType
   osc.frequency.value = freq
 
+  const now = audioCtx.currentTime
+
+  // 模拟老旧磁带机音调颤动效果 wow-and-flutter (Dreamcore / Vintage VHS 跑调效果)
+  if (station.id === 'focus' || station.id === 'cafe' || station.id === 'camp') {
+    // 产生大约 ±18 音分的微弱正弦/余弦摆动，使音高听起来有些微“飘忽不定”的梦境诡异氛围感
+    osc.detune.setValueAtTime(0, now)
+    osc.detune.linearRampToValueAtTime(16 * Math.sin(now * 8), now + 0.08)
+    osc.detune.linearRampToValueAtTime(-16 * Math.cos(now * 12), now + 0.18)
+    osc.detune.linearRampToValueAtTime(0, now + 0.26)
+  }
+
   const noteGain = audioCtx.createGain()
   osc.connect(noteGain)
   noteGain.connect(melodyGain)
 
-  const now = audioCtx.currentTime
   noteGain.gain.setValueAtTime(0, now)
   noteGain.gain.linearRampToValueAtTime(channelVolumes.value.melody, now + 0.03)
   noteGain.gain.setValueAtTime(channelVolumes.value.melody, now + 0.20)
