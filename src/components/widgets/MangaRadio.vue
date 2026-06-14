@@ -57,7 +57,7 @@ const STATIONS: Station[] = [
     id: 'camp',
     name: 'COZY_CAMP',
     fm: '101.3',
-    descZh: '林间篝火，清脆的木柴爆裂声与舒缓大调',
+    descZh: '林间野营篝火，清脆的木柴爆裂声与舒缓大调',
     descEn: 'Forest campfire soundscape with warm acoustic major chords',
     chans: { rain: 0.15, melody: 0.35, crackle: 0.75, hum: 0.00 },
     chords: [
@@ -72,7 +72,7 @@ const STATIONS: Station[] = [
     id: 'arcade',
     name: 'CHIP_DUNGEON',
     fm: '104.8',
-    descZh: '红白机像素地城，欢快紧凑的方波琶音',
+    descZh: '红白机像素地城，欢快紧凑的方波琶音进行',
     descEn: '8-Bit retro gaming dungeon with fast square wave arpeggios',
     chans: { rain: 0.00, melody: 0.40, crackle: 0.15, hum: 0.10 },
     chords: [
@@ -87,7 +87,7 @@ const STATIONS: Station[] = [
     id: 'cafe',
     name: 'LOFI_JAZZ',
     fm: '107.2',
-    descZh: '午后爵士咖啡馆，杯具敲击与慵懒 Lo-Fi 调',
+    descZh: '午后爵士咖啡馆，伴有杯具敲击的慵懒 Swing 调',
     descEn: 'Cozy afternoon cafe with lazy jazz swing & cup clinks',
     chans: { rain: 0.10, melody: 0.30, crackle: 0.55, hum: 0.05 },
     chords: [
@@ -328,7 +328,13 @@ function startMelodyScheduler() {
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { t, locale } from '../../i18n'
-import { Play, Square, Volume2, Sliders, Radio } from '@lucide/vue'
+import { Play, Square, Volume2, Sliders, Radio, Music } from '@lucide/vue'
+
+const props = withDefaults(defineProps<{
+  preview?: boolean
+}>(), {
+  preview: false
+})
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationFrameId: number | null = null
@@ -351,24 +357,24 @@ function startVisualizer() {
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    const totalBars = 16
-    const barWidth = Math.floor(canvas.width / totalBars) - 2
-    const gap = 2
+    const totalBars = 20
+    const barWidth = Math.floor(canvas.width / totalBars) - 1.5
+    const gap = 1.5
 
     for (let i = 0; i < totalBars; i++) {
-      const val = dataArray[i + 2] || 0
+      const val = dataArray[i + 1] || 0
       const percent = val / 255
       const height = percent * (canvas.height - 4)
 
-      const blockHeight = 2
+      const blockHeight = 2.5
       const blockGap = 1
       const totalBlocks = Math.floor(height / (blockHeight + blockGap))
 
       for (let b = 0; b < totalBlocks; b++) {
-        if (b > 11) {
+        if (b > 12) {
           ctx.fillStyle = '#FF5F1F'
         } else {
-          ctx.fillStyle = '#FFFFFF'
+          ctx.fillStyle = '#00FF66' // 复古液晶屏绿
         }
 
         const x = i * (barWidth + gap) + 1
@@ -556,80 +562,86 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <!-- 2. Dashboard 完整界面 (preview === false)：横向 Boombox 拟物控制台，无滚屏一屏全现 -->
-  <div v-else class="w-full bg-zinc-900 border-4 border-black p-4 relative font-mono text-left select-none text-zinc-300 flex flex-col gap-4 shadow-[6px_6px_0px_#000]">
+  <!-- 2. Dashboard 完整界面 (preview === false)：高密度横向 3 栏 Boombox，内容全保留，绝不溢出 -->
+  <div v-else class="w-full bg-zinc-900 border-4 border-black p-4 relative font-mono text-left select-none text-zinc-300 flex flex-col gap-3.5 shadow-[6px_6px_0px_#000] rounded-none">
     
     <!-- 装饰性天线 -->
-    <div class="absolute -top-[52px] left-8 w-1.5 h-12 bg-black origin-bottom transform rotate-12 flex flex-col justify-end items-center">
-      <div class="w-1 h-10 bg-zinc-400 border border-black"></div>
+    <div class="absolute -top-[48px] left-8 w-1.5 h-12 bg-black origin-bottom transform rotate-12 flex flex-col justify-end items-center">
+      <div class="w-1 h-9 bg-zinc-400 border border-black"></div>
       <div 
         class="w-3 h-3 rounded-full border border-black -mb-1.5 z-20"
         :class="[isPlaying ? 'bg-red-500 animate-pulse shadow-[0_0_6px_#ef4444]' : 'bg-red-950']"
       ></div>
     </div>
 
-    <!-- 左右分栏紧凑布局 -->
+    <!-- 螺丝标记 -->
+    <div class="flex justify-between -mt-3.5 px-1 text-zinc-600 text-[8px] select-none">
+      <span>⨂</span>
+      <span>⨂</span>
+    </div>
+
+    <!-- 三栏水平式高级电台控制台 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
       
-      <!-- ==================== 左侧分栏: 磁带舱 + 琴键 (lg:col-span-5) ==================== -->
-      <div class="lg:col-span-5 flex flex-col justify-between gap-3">
-        <!-- 磁带卡盘 -->
-        <div class="border-4 border-black bg-zinc-950 p-2.5 flex flex-col items-center justify-center relative min-h-[120px] flex-grow">
-          <div class="w-full max-w-[200px] border-4 border-black bg-amber-500/90 text-black p-2.5 relative flex flex-col gap-2 rounded-sm shadow-[3px_3px_0px_#000]">
+      <!-- ==================== 第一栏: 卡带舱与琴键 (lg:col-span-4) ==================== -->
+      <div class="lg:col-span-4 flex flex-col justify-between gap-3 border-r-0 lg:border-r border-zinc-800 pr-0 lg:pr-4">
+        <!-- 卡带舱 -->
+        <div class="border-4 border-black bg-zinc-950 p-2 flex flex-col items-center justify-center relative min-h-[120px] flex-grow">
+          <div class="w-full max-w-[190px] border-4 border-black bg-amber-500/90 text-black p-2 relative flex flex-col gap-1.5 rounded-sm shadow-[2px_2px_0px_#000]">
             <!-- label -->
-            <div class="bg-white border-2 border-black px-1 py-0.2 text-center text-[8px] font-black uppercase flex items-center justify-between">
+            <div class="bg-white border border-black px-1 py-0.2 text-center text-[8px] font-black uppercase flex items-center justify-between">
               <span>TAPE_A</span>
-              <span class="text-neutral-500 truncate max-w-[95px]">{{ currentStation.name }}</span>
+              <span class="text-neutral-500 truncate max-w-[90px]">{{ currentStation.name }}</span>
               <span>NR</span>
             </div>
 
             <!-- spools window -->
-            <div class="bg-zinc-900 border border-black h-9 flex items-center justify-around relative px-4 rounded-sm">
+            <div class="bg-zinc-900 border border-black h-8.5 flex items-center justify-around relative px-4 rounded-sm">
               <div 
-                class="w-6 h-6 rounded-full border border-zinc-700 bg-zinc-950 flex items-center justify-center"
+                class="w-5.5 h-5.5 rounded-full border border-zinc-700 bg-zinc-950 flex items-center justify-center"
                 :style="{ transform: isPlaying ? 'rotate(360deg)' : 'none' }"
                 :class="[isPlaying ? 'animate-[spin_7s_linear_infinite]' : '']"
               >
-                <div class="w-2.5 h-2.5 rounded-full border border-dashed border-zinc-500"></div>
+                <div class="w-2 h-2 rounded-full border border-dashed border-zinc-500"></div>
                 <div class="absolute inset-0 flex justify-center items-center">
-                  <div class="w-0.5 h-5 bg-zinc-850 transform rotate-45"></div>
-                  <div class="w-0.5 h-5 bg-zinc-850 transform -rotate-45"></div>
+                  <div class="w-0.5 h-4.5 bg-zinc-850 transform rotate-45"></div>
+                  <div class="w-0.5 h-4.5 bg-zinc-850 transform -rotate-45"></div>
                 </div>
               </div>
 
-              <div class="w-8 h-1.5 bg-amber-800/60 border border-zinc-950 flex justify-between items-center px-0.5">
+              <div class="w-8 h-1 bg-amber-700/60 border border-zinc-950 flex justify-between items-center px-0.5">
                 <span class="text-[4px] text-zinc-900">100</span>
                 <span class="text-[4px] text-zinc-900">0</span>
               </div>
 
               <div 
-                class="w-6 h-6 rounded-full border border-zinc-700 bg-zinc-950 flex items-center justify-center"
+                class="w-5.5 h-5.5 rounded-full border border-zinc-700 bg-zinc-950 flex items-center justify-center"
                 :style="{ transform: isPlaying ? 'rotate(360deg)' : 'none' }"
                 :class="[isPlaying ? 'animate-[spin_7s_linear_infinite]' : '']"
               >
-                <div class="w-2.5 h-2.5 rounded-full border border-dashed border-zinc-500"></div>
+                <div class="w-2 h-2 rounded-full border border-dashed border-zinc-500"></div>
                 <div class="absolute inset-0 flex justify-center items-center">
-                  <div class="w-0.5 h-5 bg-zinc-850 transform rotate-45"></div>
-                  <div class="w-0.5 h-5 bg-zinc-850 transform -rotate-45"></div>
+                  <div class="w-0.5 h-4.5 bg-zinc-850 transform rotate-45"></div>
+                  <div class="w-0.5 h-4.5 bg-zinc-850 transform -rotate-45"></div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="absolute inset-0 bg-sky-300/5 border border-dashed border-zinc-800 pointer-events-none"></div>
+          <div class="absolute inset-0 bg-sky-300/5 border border-dashed border-zinc-850 pointer-events-none"></div>
         </div>
 
-        <!-- 磁带录音机大按键 -->
-        <div class="grid grid-cols-4 gap-1.5">
+        <!-- 磁带琴键型底座大按键 -->
+        <div class="grid grid-cols-4 gap-1">
           <button 
             @click="changeStation('prev')"
-            class="border-2 border-black bg-zinc-300 text-black py-1.5 font-black text-[9px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center"
+            class="border-2 border-black bg-zinc-300 text-black py-1.5 font-bold text-[8.5px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center"
           >
             {{ t('radio.btn.prev') }}
           </button>
           
           <button 
             @click="togglePlay"
-            class="border-2 border-black py-1.5 font-black text-[9px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center text-white"
+            class="border-2 border-black py-1.5 font-bold text-[8.5px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center text-white"
             :class="[isPlaying ? 'bg-red-500' : 'bg-green-500']"
           >
             {{ isPlaying ? t('radio.btn.pause') : t('radio.btn.play') }}
@@ -637,158 +649,178 @@ onUnmounted(() => {
 
           <button 
             @click="changeStation('next')"
-            class="border-2 border-black bg-zinc-300 text-black py-1.5 font-black text-[9px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center"
+            class="border-2 border-black bg-zinc-300 text-black py-1.5 font-bold text-[8.5px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center"
           >
             {{ t('radio.btn.next') }}
           </button>
 
           <button 
             @click="ejectModal"
-            class="border-2 border-black bg-zinc-200 text-red-600 py-1.5 font-black text-[9px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center"
+            class="border-2 border-black bg-zinc-200 text-red-600 py-1.5 font-bold text-[8.5px] tracking-wider shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-none cursor-pointer text-center"
           >
             {{ t('radio.btn.eject') }}
           </button>
         </div>
       </div>
 
-      <!-- ==================== 右侧分栏: 刻度盘 + LCD状态 + 滑块与旋钮 (lg:col-span-7) ==================== -->
-      <div class="lg:col-span-7 flex flex-col justify-between gap-3">
-        
-        <!-- 1. 模拟频率指示盘 (FM Dial) -->
-        <div class="border-4 border-black bg-zinc-950 p-2 flex flex-col gap-1 relative h-[60px] justify-center shrink-0">
-          <div class="h-8 relative bg-black border border-zinc-900 overflow-hidden flex flex-col justify-between py-0.5">
-            <div class="w-full flex justify-between px-2.5 text-[8px] text-zinc-500 select-none leading-none">
+      <!-- ==================== 第二栏: 调频盘与发光液晶频谱大屏 (lg:col-span-4) ==================== -->
+      <div class="lg:col-span-4 flex flex-col justify-between gap-3 border-r-0 lg:border-r border-zinc-800 pr-0 lg:pr-4">
+        <!-- 模拟调谐频率指示盘 (FM Dial) -->
+        <div class="border-4 border-black bg-zinc-950 p-2 flex flex-col gap-1 relative h-[50px] justify-center shrink-0">
+          <div class="h-6.5 relative bg-black border border-zinc-900 overflow-hidden flex flex-col justify-between py-0.5">
+            <div class="w-full flex justify-between px-2 text-[7.5px] text-zinc-500 select-none leading-none">
               <span v-for="(st, i) in STATIONS" :key="st.id" @click="selectStationDirect(i)" class="cursor-pointer hover:text-white transition-colors">
                 {{ st.fm }}
               </span>
             </div>
-            <div class="h-1 w-full border-t border-zinc-800 border-dashed relative"></div>
-            <div class="w-full flex justify-between px-2.5 text-[6.5px] text-zinc-600 leading-none select-none">
-              <span v-for="st in STATIONS" :key="st.id">{{ st.name }}</span>
-            </div>
-            <!-- 红色物理指针 -->
+            <div class="h-0.5 w-full border-t border-zinc-850 border-dashed relative"></div>
+            <!-- 红色刻度指针 -->
             <div 
-              class="absolute top-0 bottom-0 w-[3px] bg-red-600 shadow-[0_0_6px_rgba(220,38,38,0.8)] z-10 transition-all duration-300"
+              class="absolute top-0 bottom-0 w-[3px] bg-red-600 shadow-[0_0_5px_rgba(220,38,38,0.8)] z-10 transition-all duration-300"
               :style="{ left: pointerLeftPercent + '%' }"
             >
-              <div class="w-1 h-1 bg-red-500 border border-black absolute -top-0.5 -left-[0.5px]"></div>
+              <div class="w-1.5 h-1.5 bg-red-500 border border-black absolute -top-0.5 -left-[0.5px]"></div>
             </div>
           </div>
         </div>
 
-        <!-- 2. 液晶式状态条: Canvas 电平表 + 文字介绍 -->
-        <div class="grid grid-cols-12 border-4 border-black bg-black p-1.5 items-center gap-2.5 min-h-[48px] shrink-0">
-          <div class="col-span-4 relative h-7 border border-zinc-900 overflow-hidden bg-black">
+        <!-- 液晶电子指示大屏 (Canvas 频谱分析 + 完整中文详情) -->
+        <div class="border-4 border-black bg-[#08150f] p-2 flex flex-col gap-2 relative min-h-[100px] flex-grow text-[#00ff66]">
+          <!-- Canvas 频段 Equalizer -->
+          <div class="w-full h-[40px] relative bg-black/40 border border-[#0a2618]">
             <canvas 
               ref="canvasRef" 
-              width="120" 
-              height="28" 
+              width="220" 
+              height="38" 
               class="w-full h-full block"
             ></canvas>
-            <div v-if="!isPlaying" class="absolute inset-0 flex items-center justify-center bg-black text-neutral-600 text-[8px] tracking-widest leading-none">
-              MUTED
+            <div v-if="!isPlaying" class="absolute inset-0 flex items-center justify-center text-[#044c2c] text-[8px] font-black tracking-widest uppercase">
+              // MUTED_LINE //
             </div>
           </div>
-          <div class="col-span-8 flex flex-col gap-0.5 text-left text-zinc-400 font-mono text-[9px] leading-tight select-text overflow-hidden">
-            <div class="flex justify-between items-center text-accent text-[8px] font-bold">
-              <span>{{ currentStation.fm }} MHz - {{ currentStation.name }}</span>
-              <span v-if="isPlaying" class="text-green-500 tracking-wider">● LIVE</span>
+
+          <!-- 电台文本介绍区 (完整保留内容，不截断) -->
+          <div class="flex flex-col gap-0.5 text-left text-[9px] font-mono leading-snug">
+            <div class="flex justify-between items-center text-[8.5px] font-black border-b border-[#0f3622] pb-0.5">
+              <span>FM {{ currentStation.fm }} MHz // {{ currentStation.name }}</span>
+              <span v-if="isPlaying" class="text-red-500 animate-pulse text-[7.5px]">● ON AIR</span>
             </div>
-            <p class="truncate text-zinc-300">
-              <span class="text-zinc-600 font-normal mr-0.5">[</span>
+            <p class="text-[#83ffd2] mt-0.5 text-[8.5px] leading-tight">
+              <span class="text-[#0e5c35] font-normal mr-0.5">[</span>
               {{ locale === 'zh' ? currentStation.descZh : currentStation.descEn }}
-              <span class="text-zinc-600 font-normal ml-0.5">]</span>
+              <span class="text-[#0e5c35] font-normal ml-0.5">]</span>
             </p>
           </div>
         </div>
+      </div>
 
-        <!-- 3. 混音推子台与物理旋钮并排 -->
-        <div class="grid grid-cols-12 gap-3 items-center">
-          <!-- 左侧：4音轨混音滑块 (7列) -->
-          <div class="col-span-8 flex flex-col gap-1.5 border border-zinc-800 bg-black/20 p-2 text-[8px]">
-            <!-- RAIN -->
-            <div class="flex items-center gap-2">
-              <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.rain') }}</span>
-              <input 
-                v-model.number="channelVolumes.rain"
-                type="range" min="0" max="1" step="0.05"
-                class="flex-grow accent-accent h-1"
-              />
-              <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.rain * 10) }}</span>
-            </div>
-            <!-- MELODY -->
-            <div class="flex items-center gap-2">
-              <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.melody') }}</span>
-              <input 
-                v-model.number="channelVolumes.melody"
-                type="range" min="0" max="1" step="0.05"
-                class="flex-grow accent-accent h-1"
-              />
-              <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.melody * 10) }}</span>
-            </div>
-            <!-- CRACKLE -->
-            <div class="flex items-center gap-2">
-              <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.crackle') }}</span>
-              <input 
-                v-model.number="channelVolumes.crackle"
-                type="range" min="0" max="1" step="0.05"
-                class="flex-grow accent-accent h-1"
-              />
-              <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.crackle * 10) }}</span>
-            </div>
-            <!-- HUM -->
-            <div class="flex items-center gap-2">
-              <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.hum') }}</span>
-              <input 
-                v-model.number="channelVolumes.hum"
-                type="range" min="0" max="1" step="0.05"
-                class="flex-grow accent-accent h-1"
-              />
-              <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.hum * 10) }}</span>
-            </div>
-          </div>
-
-          <!-- 右侧：双圆形旋钮 (4列) -->
-          <div class="col-span-4 flex justify-around items-center pl-1">
-            <!-- 1. Volume -->
-            <div class="flex flex-col items-center gap-1">
-              <div 
-                class="w-10 h-10 rounded-full border-2 border-black bg-zinc-800 relative shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center select-none"
-                :style="{ transform: `rotate(${volumeRotation}deg)` }"
-                title="Master Volume"
-              >
-                <div class="absolute top-1 w-1 h-1 bg-red-600 rounded-full"></div>
-                <div class="w-5 h-5 rounded-full bg-zinc-950 border border-zinc-700 flex items-center justify-center text-[5.5px] text-zinc-500 font-bold leading-none">
-                  VOL
-                </div>
-              </div>
-              <span class="text-[7px] text-zinc-500 font-black tracking-wide">{{ t('radio.volume.master') }}</span>
-            </div>
-
-            <!-- 2. Tuning -->
-            <div class="flex flex-col items-center gap-1">
-              <div 
-                @click="changeStation('next')"
-                class="w-10 h-10 rounded-full border-2 border-black bg-zinc-800 relative shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center select-none active:translate-y-[1px] active:shadow-[1px_1px_0px_#000] transition-transform"
-                :style="{ transform: `rotate(${tuningRotation}deg)` }"
-                title="Tuning selector"
-              >
-                <div class="absolute top-1 w-1 h-1 bg-accent rounded-full"></div>
-                <div class="w-5 h-5 rounded-full bg-zinc-950 border border-zinc-700 flex items-center justify-center text-[5.5px] text-accent font-bold leading-none">
-                  TUNE
-                </div>
-              </div>
-              <span class="text-[7px] text-zinc-500 font-black tracking-wide">{{ t('radio.tuning.knob') }}</span>
-            </div>
+      <!-- ==================== 第三栏: 预设选台 + 旋钮与模拟混音台 (lg:col-span-4) ==================== -->
+      <div class="lg:col-span-4 flex flex-col justify-between gap-3">
+        <!-- 1. 预设快捷选台按键组 (Presets) -->
+        <div class="border border-zinc-800 bg-zinc-950/40 p-2 flex flex-col gap-1.5">
+          <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">{{ t('radio.preset') }}</span>
+          <div class="flex flex-wrap gap-1">
+            <button 
+              v-for="(st, idx) in STATIONS" 
+              :key="st.id"
+              @click="selectStationDirect(idx)"
+              class="border border-zinc-700 bg-zinc-950 py-0.5 px-1.5 text-[8px] transition-none cursor-pointer"
+              :class="[currentStationIdx === idx ? 'border-accent text-accent font-bold bg-accent/5 shadow-[1px_1px_0px_#ff5f1f]' : 'text-zinc-500 hover:text-zinc-300 hover:border-zinc-500']"
+            >
+              {{ st.fm }}
+            </button>
           </div>
         </div>
 
+        <!-- 2. 音量与搜频旋钮 -->
+        <div class="flex justify-around items-center bg-zinc-950/20 py-1 border border-zinc-800">
+          <div class="flex flex-col items-center gap-0.5">
+            <div 
+              class="w-9 h-9 rounded-full border-2 border-black bg-zinc-850 relative shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center select-none"
+              :style="{ transform: `rotate(${volumeRotation}deg)` }"
+            >
+              <div class="absolute top-0.5 w-1 h-1 bg-red-600 rounded-full"></div>
+              <div class="w-4 h-4 rounded-full bg-zinc-950 border border-zinc-750 flex items-center justify-center text-[5px] text-zinc-500 font-bold">
+                VOL
+              </div>
+            </div>
+            <span class="text-[7px] text-zinc-500 font-bold tracking-wide uppercase">{{ t('radio.volume.master') }}</span>
+          </div>
+
+          <!-- Slider inside Volume unit -->
+          <input 
+            v-model.number="masterVolume"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            class="w-14 accent-accent h-0.5 cursor-pointer"
+          />
+
+          <div class="flex flex-col items-center gap-0.5">
+            <div 
+              @click="changeStation('next')"
+              class="w-9 h-9 rounded-full border-2 border-black bg-zinc-850 relative shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center select-none active:translate-y-[1px] active:shadow-[1px_1px_0px_#000] transition-transform"
+              :style="{ transform: `rotate(${tuningRotation}deg)` }"
+            >
+              <div class="absolute top-0.5 w-1 h-1 bg-accent rounded-full"></div>
+              <div class="w-4 h-4 rounded-full bg-zinc-950 border border-zinc-750 flex items-center justify-center text-[5px] text-accent font-bold">
+                TUNE
+              </div>
+            </div>
+            <span class="text-[7px] text-zinc-500 font-bold tracking-wide uppercase">{{ t('radio.tuning.knob') }}</span>
+          </div>
+        </div>
+
+        <!-- 3. 4声道混音推子台 -->
+        <div class="border border-zinc-800 bg-black/20 p-2 flex flex-col gap-1 text-[8.5px]">
+          <!-- RAIN -->
+          <div class="flex items-center gap-2">
+            <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.rain') }}</span>
+            <input 
+              v-model.number="channelVolumes.rain"
+              type="range" min="0" max="1" step="0.05"
+              class="flex-grow accent-accent h-1"
+            />
+            <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.rain * 10) }}</span>
+          </div>
+          <!-- MELODY -->
+          <div class="flex items-center gap-2">
+            <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.melody') }}</span>
+            <input 
+              v-model.number="channelVolumes.melody"
+              type="range" min="0" max="1" step="0.05"
+              class="flex-grow accent-accent h-1"
+            />
+            <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.melody * 10) }}</span>
+          </div>
+          <!-- CRACKLE -->
+          <div class="flex items-center gap-2">
+            <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.crackle') }}</span>
+            <input 
+              v-model.number="channelVolumes.crackle"
+              type="range" min="0" max="1" step="0.05"
+              class="flex-grow accent-accent h-1"
+            />
+            <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.crackle * 10) }}</span>
+          </div>
+          <!-- HUM -->
+          <div class="flex items-center gap-2">
+            <span class="text-zinc-500 w-16 text-left truncate">{{ t('radio.chan.hum') }}</span>
+            <input 
+              v-model.number="channelVolumes.hum"
+              type="range" min="0" max="1" step="0.05"
+              class="flex-grow accent-accent h-1"
+            />
+            <span class="text-zinc-400 text-right w-4 font-bold">{{ Math.round(channelVolumes.hum * 10) }}</span>
+          </div>
+        </div>
       </div>
 
     </div>
 
-    <!-- 底部螺丝标记与装饰线 -->
-    <div class="flex justify-between items-center text-[7px] text-zinc-600 uppercase tracking-widest -mb-1 px-1 border-t border-zinc-800 pt-3">
+    <!-- 底部脚注 -->
+    <div class="flex justify-between items-center text-[7px] text-zinc-600 uppercase tracking-widest -mb-1.5 border-t border-zinc-800 pt-3.5 select-none">
       <span>⨂ HIGH_FIDELITY_ANALOG_CHIPS</span>
       <span>MADE_BY_GEMINI ⨂</span>
     </div>

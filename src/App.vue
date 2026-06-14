@@ -782,6 +782,11 @@ function handleCommandSubmit() {
 const activeResizingItem = ref<any>(null)
 let startX = 0
 let startY = 0
+let startWidth = 0
+let startHeight = 0
+let cellUnitWidth = 100
+let cellUnitHeight = 110
+let resizingCardEl: HTMLElement | null = null
 let startSize: 'normal' | 'wide' | 'tall' | 'large' = 'normal'
 
 function startResizeItem(item: any, e: MouseEvent) {
@@ -789,33 +794,51 @@ function startResizeItem(item: any, e: MouseEvent) {
   startX = e.clientX
   startY = e.clientY
   startSize = item.size || 'normal'
+  
+  // 查找当前卡片 DOM 节点
+  const handleEl = e.currentTarget as HTMLElement
+  resizingCardEl = handleEl.closest('.group\\/card') as HTMLElement
+  if (resizingCardEl) {
+    startWidth = resizingCardEl.offsetWidth
+    startHeight = resizingCardEl.offsetHeight
+    
+    // 动态计算网格单格基本宽度和高度，规避不同分辨率导致的固定像素误差
+    const gap = 1
+    cellUnitWidth = startWidth
+    cellUnitHeight = startHeight
+    if (startSize === 'wide') {
+      cellUnitWidth = (startWidth - gap) / 2
+    } else if (startSize === 'tall') {
+      cellUnitHeight = (startHeight - gap) / 2
+    } else if (startSize === 'large') {
+      cellUnitWidth = (startWidth - gap) / 2
+      cellUnitHeight = (startHeight - gap) / 2
+    }
+  }
+  
   document.body.classList.add('is-resizing')
   window.addEventListener('mousemove', handleResizeMove)
   window.addEventListener('mouseup', handleResizeEnd)
 }
 
 function handleResizeMove(e: MouseEvent) {
-  if (!activeResizingItem.value) return
+  if (!activeResizingItem.value || !resizingCardEl) return
   const dx = e.clientX - startX
   const dy = e.clientY - startY
   
-  const thresholdX = 60
-  const thresholdY = 60
+  // 限制卡片最小尺寸，防止缩没
+  const currentWidth = Math.max(80, startWidth + dx)
+  const currentHeight = Math.max(80, startHeight + dy)
   
-  let cols = (startSize === 'wide' || startSize === 'large') ? 2 : 1
-  let rows = (startSize === 'tall' || startSize === 'large') ? 2 : 1
+  // 实时设置 inline style，保证拖动时卡片是平滑、线性变大的
+  resizingCardEl.style.width = currentWidth + 'px'
+  resizingCardEl.style.height = currentHeight + 'px'
+  resizingCardEl.style.zIndex = '50'
+  resizingCardEl.style.position = 'relative'
   
-  if (dx > thresholdX) {
-    cols = 2
-  } else if (dx < -thresholdX) {
-    cols = 1
-  }
-  
-  if (dy > thresholdY) {
-    rows = 2
-  } else if (dy < -thresholdY) {
-    rows = 1
-  }
+  // 计算当前尺寸应吸附的列数和行数 (超过单格的1.4倍则判定进入下一档)
+  const cols = currentWidth > cellUnitWidth * 1.4 ? 2 : 1
+  const rows = currentHeight > cellUnitHeight * 1.4 ? 2 : 1
   
   let newSize: 'normal' | 'wide' | 'tall' | 'large' = 'normal'
   if (cols === 2 && rows === 2) newSize = 'large'
@@ -830,6 +853,14 @@ function handleResizeMove(e: MouseEvent) {
 }
 
 function handleResizeEnd() {
+  if (resizingCardEl) {
+    resizingCardEl.style.width = ''
+    resizingCardEl.style.height = ''
+    resizingCardEl.style.zIndex = ''
+    resizingCardEl.style.position = ''
+    resizingCardEl = null
+  }
+  
   activeResizingItem.value = null
   document.body.classList.remove('is-resizing')
   window.removeEventListener('mousemove', handleResizeMove)
