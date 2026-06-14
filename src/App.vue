@@ -30,6 +30,7 @@ import {
 
 import MangaButton from './components/MangaButton.vue'
 import MangaModal from './components/MangaModal.vue'
+import MangaLogo from './components/MangaLogo.vue'
 import { availableWidgets } from './components/WidgetRegistry'
 import { useNavData } from './composables/useNavData'
 import { useCloudSync } from './composables/useCloudSync'
@@ -530,6 +531,13 @@ function copyIdleQuote() {
   navigator.clipboard.writeText(fullText)
 }
 
+const currentSystemTime = ref(new Date().toISOString().replace('T',' ').slice(0,19))
+let systemTimeInterval: any = null
+
+function updateSystemTime() {
+  currentSystemTime.value = new Date().toISOString().replace('T',' ').slice(0,19)
+}
+
 onMounted(async () => {
   loadFromStorage(); setupPersistence(); setupAuthListener()
   window.addEventListener('artisan-request-cloud-push', queueCloudPush)
@@ -558,10 +566,12 @@ onMounted(async () => {
 
   if (isLoggedIn()) await pullCloudData(true)
   isAppLoading.value = false; initCanvas()
+  systemTimeInterval = setInterval(updateSystemTime, 1000)
 })
 
 onUnmounted(() => {
   destroyCanvas()
+  if (systemTimeInterval) clearInterval(systemTimeInterval)
   window.removeEventListener('artisan-request-cloud-push', queueCloudPush)
   window.removeEventListener('manga-widgets-layout-updated', loadFromStorage)
   
@@ -587,8 +597,9 @@ onUnmounted(() => {
     <div v-if="isAppLoading" class="fixed inset-0 z-[9999] bg-base flex flex-col items-center justify-center">
       <div class="border border-accent bg-base px-8 py-6 flex flex-col items-center gap-4" style="min-width:320px">
         <div class="text-[10px] text-neutral-600 tracking-widest mb-1">{{ $t('system.boot') }}</div>
-        <h1 class="text-xl font-bold tracking-[0.25em] text-accent select-none uppercase">
-          {{ config.logoText || 'DASHBOARD' }}
+        <MangaLogo class="w-10 h-10 text-accent animate-pulse" />
+        <h1 class="text-xl font-bold tracking-[0.25em] text-accent select-none uppercase mt-1">
+          {{ config.logoText || 'NEXUS' }}
         </h1>
         <div class="w-full border-t border-line"></div>
         <div class="flex items-center gap-2">
@@ -609,7 +620,7 @@ onUnmounted(() => {
         <span class="text-[9px] text-accent tracking-widest">{{ $t('dashboard.home') }}</span>
         <span class="text-[9px] text-neutral-500 tracking-widest hidden sm:inline">{{ $t('pid.mem.net') }}</span>
         <div class="ml-auto flex items-center gap-4">
-          <span class="text-[9px] text-neutral-500 tracking-widest hidden md:inline">{{ new Date().toISOString().replace('T',' ').slice(0,19) }}</span>
+          <span class="text-[9px] text-neutral-500 tracking-widest font-mono hidden md:inline">{{ currentSystemTime }}</span>
           <div class="flex gap-1.5">
             <span class="w-2 h-2 bg-neutral-600 inline-block"></span>
             <span class="w-2 h-2 bg-accent inline-block"></span>
@@ -619,7 +630,14 @@ onUnmounted(() => {
       </div>
       <!-- Main header row -->
       <div class="max-w-[90rem] mx-auto px-4 py-2 flex flex-row items-center gap-3">
-        <span class="text-line text-sm hidden sm:inline">//</span>
+        <!-- Logo & Brand Name -->
+        <div class="flex items-center gap-2 select-none">
+          <MangaLogo class="w-5 h-5 text-accent" />
+          <span class="text-sm font-black tracking-widest text-neutral-200 uppercase hover:text-accent transition-colors">
+            {{ config.logoText || 'NEXUS' }}
+          </span>
+        </div>
+        <span class="text-line text-sm hidden sm:inline">/</span>
         <component
           v-if="config.widgets.clock"
           :is="availableWidgets.find(w => w.id === 'clock')?.component"
@@ -973,7 +991,7 @@ onUnmounted(() => {
                     </svg>
 
 
-                    <!-- 3. 天气状况: 内联 SVG 随天气条件变化（与其他图标风格一致） -->
+                    <!-- 3. 天气状况: 内联 SVG 随天气条件变化（与其他图标风格一致，带精美 CSS 微动效） -->
                     <svg v-else-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'weather'"
                       viewBox="0 0 40 40"
                       class="w-9 h-9 sm:w-11 sm:h-11"
@@ -983,48 +1001,80 @@ onUnmounted(() => {
                     >
                       <!-- 晴天: 太阳 -->
                       <template v-if="weatherCondition === 'clear'">
-                        <circle cx="20" cy="20" r="6" stroke="currentColor" stroke-width="1.8" fill="none"/>
-                        <line x1="20" y1="4" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="20" y1="32" x2="20" y2="36" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="4" y1="20" x2="8" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="32" y1="20" x2="36" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="8.1" y1="8.1" x2="11" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="29" y1="29" x2="31.9" y2="31.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="31.9" y1="8.1" x2="29" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="11" y1="29" x2="8.1" y2="31.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <g class="animate-weather-sun">
+                          <circle cx="20" cy="20" r="6" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                          <line x1="20" y1="4" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="20" y1="32" x2="20" y2="36" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="4" y1="20" x2="8" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="32" y1="20" x2="36" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="8.1" y1="8.1" x2="11" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="29" y1="29" x2="31.9" y2="31.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="31.9" y1="8.1" x2="29" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                          <line x1="11" y1="29" x2="8.1" y2="31.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        </g>
                       </template>
                       <!-- 阴天: 云朵 -->
                       <template v-else-if="weatherCondition === 'cloud'">
-                        <path d="M8 28 Q8 20 16 20 Q16 13 24 13 Q32 13 32 21 Q37 21 37 27 Q37 33 31 33 L10 33 Q4 33 4 27 Q4 21 8 21 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <g class="animate-weather-cloud">
+                          <path d="M8 28 Q8 20 16 20 Q16 13 24 13 Q32 13 32 21 Q37 21 37 27 Q37 33 31 33 L10 33 Q4 33 4 27 Q4 21 8 21 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        </g>
                       </template>
                       <!-- 雨天: 云+雨 -->
                       <template v-else-if="weatherCondition === 'rain'">
-                        <path d="M7 22 Q7 16 14 16 Q14 10 21 10 Q28 10 28 17 Q33 17 33 22 Q33 27 27 27 L8 27 Q3 27 3 22 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                        <line x1="11" y1="31" x2="9" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="18" y1="31" x2="16" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="25" y1="31" x2="23" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <g class="animate-weather-cloud">
+                          <path d="M7 22 Q7 16 14 16 Q14 10 21 10 Q28 10 28 17 Q33 17 33 22 Q33 27 27 27 L8 27 Q3 27 3 22 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        </g>
+                        <g class="animate-weather-rain-1">
+                          <line x1="11" y1="31" x2="9" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-rain-2">
+                          <line x1="18" y1="31" x2="16" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-rain-3">
+                          <line x1="25" y1="31" x2="23" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        </g>
                       </template>
                       <!-- 雪天: 云+雪花 -->
                       <template v-else-if="weatherCondition === 'snow'">
-                        <path d="M7 22 Q7 16 14 16 Q14 10 21 10 Q28 10 28 17 Q33 17 33 22 Q33 27 27 27 L8 27 Q3 27 3 22 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                        <line x1="11" y1="32" x2="11" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="8" y1="35" x2="14" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="19" y1="32" x2="19" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="16" y1="35" x2="22" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="27" y1="32" x2="27" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                        <line x1="24" y1="35" x2="30" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        <g class="animate-weather-cloud">
+                          <path d="M7 22 Q7 16 14 16 Q14 10 21 10 Q28 10 28 17 Q33 17 33 22 Q33 27 27 27 L8 27 Q3 27 3 22 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        </g>
+                        <g class="animate-weather-snow-1">
+                          <line x1="11" y1="32" x2="11" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                          <line x1="8" y1="35" x2="14" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-snow-2">
+                          <line x1="19" y1="32" x2="19" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                          <line x1="16" y1="35" x2="22" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-snow-3">
+                          <line x1="27" y1="32" x2="27" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                          <line x1="24" y1="35" x2="30" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                        </g>
                       </template>
                       <!-- 雷暴: 云+闪电 -->
                       <template v-else-if="weatherCondition === 'storm'">
-                        <path d="M7 20 Q7 14 14 14 Q14 8 21 8 Q28 8 28 15 Q33 15 33 20 Q33 25 27 25 L8 25 Q3 25 3 20 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                        <polyline points="22,28 16,35 20,35 14,43" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+                        <g class="animate-weather-cloud-storm">
+                          <path d="M7 20 Q7 14 14 14 Q14 8 21 8 Q28 8 28 15 Q33 15 33 20 Q33 25 27 25 L8 25 Q3 25 3 20 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        </g>
+                        <g class="animate-weather-lightning">
+                          <polyline points="22,28 16,35 20,35 14,43" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+                        </g>
                       </template>
                       <!-- 雾天: 横线 -->
                       <template v-else>
-                        <line x1="6" y1="14" x2="34" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="10" y1="20" x2="34" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="6" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
-                        <line x1="10" y1="32" x2="34" y2="32" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        <g class="animate-weather-fog-1">
+                          <line x1="6" y1="14" x2="34" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-fog-2">
+                          <line x1="10" y1="20" x2="34" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-fog-3">
+                          <line x1="6" y1="26" x2="30" y2="26" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        </g>
+                        <g class="animate-weather-fog-4">
+                          <line x1="10" y1="32" x2="34" y2="32" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                        </g>
                       </template>
                     </svg>
 

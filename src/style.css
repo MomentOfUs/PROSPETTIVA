@@ -267,3 +267,118 @@ a:focus-visible {
     0 0 4px currentColor,
     0 0 10px currentColor;
 }
+
+/* ═══════════════════════════════════════════════════════
+   Neo-Brutalist Weather SVG Keyframe Animations
+   ═══════════════════════════════════════════════════════ */
+
+/* 晴天自转 */
+@keyframes weatherSunSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-weather-sun {
+  animation: weatherSunSpin 20s linear infinite;
+  transform-origin: 20px 20px;
+}
+
+/* 太阳核心呼吸缩放 */
+@keyframes weatherSunPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.animate-weather-sun circle {
+  animation: weatherSunPulse 4s ease-in-out infinite;
+  transform-origin: 20px 20px;
+}
+
+/* 云朵浮动 */
+@keyframes weatherCloudFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.animate-weather-cloud {
+  animation: weatherCloudFloat 4s ease-in-out infinite;
+  transform-origin: 20px 23px;
+}
+
+/* 雨滴下落偏转 (70度斜角) */
+@keyframes weatherRainDrop {
+  0% { transform: translate(0px, -4px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(-2px, 6px); opacity: 0; }
+}
+.animate-weather-rain-1 {
+  animation: weatherRainDrop 1.2s linear infinite;
+}
+.animate-weather-rain-2 {
+  animation: weatherRainDrop 1.2s linear infinite;
+  animation-delay: 0.4s;
+}
+.animate-weather-rain-3 {
+  animation: weatherRainDrop 1.2s linear infinite;
+  animation-delay: 0.8s;
+}
+
+/* 雪花飘落旋转 */
+@keyframes weatherSnowFlake {
+  0% { transform: translateY(-3px) rotate(0deg); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(5px) rotate(180deg); opacity: 0; }
+}
+.animate-weather-snow-1 {
+  animation: weatherSnowFlake 2.5s linear infinite;
+  transform-origin: 11px 35px;
+}
+.animate-weather-snow-2 {
+  animation: weatherSnowFlake 2.5s linear infinite;
+  animation-delay: 0.8s;
+  transform-origin: 19px 35px;
+}
+.animate-weather-snow-3 {
+  animation: weatherSnowFlake 2.5s linear infinite;
+  animation-delay: 1.6s;
+  transform-origin: 27px 35px;
+}
+
+/* 雷电频闪 */
+@keyframes weatherLightning {
+  0%, 85%, 90%, 95%, 100% { opacity: 0; }
+  87%, 92%, 94% { opacity: 1; }
+}
+.animate-weather-lightning {
+  animation: weatherLightning 3.5s ease-in-out infinite;
+}
+
+/* 雷暴天气下的云朵变色闪烁 */
+@keyframes weatherCloudStormColor {
+  0%, 85%, 90%, 95%, 100% { color: inherit; filter: brightness(1); }
+  87%, 92%, 94% { color: var(--color-accent); filter: brightness(1.3); }
+}
+.animate-weather-cloud-storm {
+  animation: weatherCloudFloat 4s ease-in-out infinite, weatherCloudStormColor 3.5s ease-in-out infinite;
+  transform-origin: 20px 21px;
+}
+
+/* 迷雾水平交错飘动 */
+@keyframes weatherFogDriftOdd {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(2.5px); }
+}
+@keyframes weatherFogDriftEven {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-2.5px); }
+}
+.animate-weather-fog-1 {
+  animation: weatherFogDriftOdd 4s ease-in-out infinite;
+}
+.animate-weather-fog-2 {
+  animation: weatherFogDriftEven 4s ease-in-out infinite;
+}
+.animate-weather-fog-3 {
+  animation: weatherFogDriftOdd 4.5s ease-in-out infinite;
+}
+.animate-weather-fog-4 {
+  animation: weatherFogDriftEven 4.5s ease-in-out infinite;
+}
+

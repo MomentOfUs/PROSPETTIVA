@@ -123,6 +123,10 @@ export const zh = {
   'clock.reset': '重置',
   'clock.focus': '专注模式',
   'clock.done': '完成',
+  'clock.terminal.title': 'NEXUS 时间终端',
+  'clock.calendar.today': '今天',
+  'clock.calendar.pin': '固定',
+  'clock.calendar.unpin': '取消固定',
 
   // ── Widget: Search ──
   'search.engine': '引擎',
@@ -180,6 +184,10 @@ export const zh = {
   'weather.showers': '阵雨',
   'weather.storm': '暴风雨',
   'weather.thunderstorm': '雷暴',
+  'weather.city.placeholder': '输入城市...',
+  'weather.city.notfound': '城市未找到',
+  'weather.city.auto': '自动',
+  'weather.city.edit': '修改',
 
   // ── Widget: Hitokoto ──
   'hitokoto.title': '[ 箴言 ]',

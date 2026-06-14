@@ -36,7 +36,7 @@ export interface Config {
 }
 
 const DEFAULT_CONFIG: Config = {
-  logoText: 'PROSPETTIVA',
+  logoText: 'NEXUS',
   backgroundPattern: 'dots',
   mangaFontEnabled: true,
   widgets: {
@@ -142,8 +142,8 @@ export function useNavData() {
         if (!config.value.accentColor) config.value.accentColor = DEFAULT_CONFIG.accentColor
 
         // 修正旧版 logoText
-        if (['MANGA NAV', 'MANGA DASH', 'ARTISAN NAV'].includes(config.value.logoText)) {
-          config.value.logoText = 'PROSPETTIVA'
+        if (['MANGA NAV', 'MANGA DASH', 'ARTISAN NAV', 'PROSPETTIVA'].includes(config.value.logoText)) {
+          config.value.logoText = 'NEXUS'
         }
         return true
       } catch {

@@ -123,6 +123,10 @@ export const en = {
   'clock.reset': 'RESET',
   'clock.focus': 'FOCUS MODE',
   'clock.done': 'DONE',
+  'clock.terminal.title': 'NEXUS TIME TERMINAL',
+  'clock.calendar.today': 'TODAY',
+  'clock.calendar.pin': 'PIN',
+  'clock.calendar.unpin': 'UNPIN',
 
   // ── Widget: Search ──
   'search.engine': 'ENGINE',
@@ -180,6 +184,10 @@ export const en = {
   'weather.showers': 'SHOWERS',
   'weather.storm': 'STORM',
   'weather.thunderstorm': 'THUNDERSTORM',
+  'weather.city.placeholder': 'Enter city...',
+  'weather.city.notfound': 'City not found',
+  'weather.city.auto': 'Auto',
+  'weather.city.edit': 'Edit',
 
   // ── Widget: Hitokoto ──
   'hitokoto.title': '[ QUOTE ]',
