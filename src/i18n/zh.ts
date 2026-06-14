@@ -450,6 +450,16 @@ export const zh = {
   'notes.last_modified': '最后修改:',
   'notes.write_here': '在此记录...',
   'notes.no_title': '无标题',
+  'notes.search_placeholder': '🔍 搜索笔记...',
+  'notes.all_tags': '🏷️ 所有标签',
+  'notes.add_tag': '添加标签...',
+  'notes.export_md': '导出 .md',
+  'notes.fullscreen': '全屏',
+  'notes.windowed': '窗口',
+  'notes.edit': '编辑',
+  'notes.preview': '预览',
+  'notes.words': '字数',
+  'notes.lines': '行数',
 
   // ── Widget: DevTools extra ──
   'devtools.minify': '压缩',

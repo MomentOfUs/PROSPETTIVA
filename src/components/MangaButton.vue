@@ -17,7 +17,7 @@ const btnClasses = computed(() => {
   return [
     'border border-line bg-base text-neutral-300',
     'uppercase tracking-widest',
-    'hover:bg-neutral-200 hover:text-black hover:border-neutral-200',
+    'hover:bg-neutral-300 hover:text-base hover:border-neutral-300',
     'active:translate-y-[1px]',
     'transition-none flex items-center gap-2 cursor-pointer',
     sizeClass

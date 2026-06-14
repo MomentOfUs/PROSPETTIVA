@@ -450,6 +450,16 @@ export const en = {
   'notes.last_modified': 'LAST_MODIFIED:',
   'notes.write_here': 'Write here...',
   'notes.no_title': 'NO_TITLE',
+  'notes.search_placeholder': '🔍 Search notes...',
+  'notes.all_tags': '🏷️ All tags',
+  'notes.add_tag': 'Add tag...',
+  'notes.export_md': 'Export .md',
+  'notes.fullscreen': 'Fullscreen',
+  'notes.windowed': 'Window',
+  'notes.edit': 'Edit',
+  'notes.preview': 'Preview',
+  'notes.words': 'Words',
+  'notes.lines': 'Lines',
 
   // ── Widget: DevTools extra ──
   'devtools.minify': 'MINIFY',

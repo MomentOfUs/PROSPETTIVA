@@ -887,6 +887,7 @@ onUnmounted(() => {
                     </svg>
 
                     <!-- 2. AI 对话: 可爱圆润机器人 SVG，5种表情循环 -->
+                    <!-- 2. AI 对话: 可爱圆润机器人 SVG，5种表情平滑渐变与呼吸微动效 -->
                     <svg v-else-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'aichat'"
                       viewBox="0 0 44 44"
                       class="w-9 h-9 sm:w-11 sm:h-11"
@@ -894,57 +895,116 @@ onUnmounted(() => {
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
-                      <!-- 天线竖杆 -->
-                      <line x1="22" y1="2" x2="22" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                      <!-- 天线球 (可爱圆头) -->
-                      <circle cx="22" cy="2" r="2" fill="currentColor"/>
-                      <!-- 圆角头部 -->
-                      <rect x="5" y="9" width="34" height="26" rx="7" stroke="currentColor" stroke-width="1.6" fill="none"/>
-                      <!-- 左眼 (大圆眼) -->
-                      <circle cx="15" cy="19" r="3.2" fill="currentColor"/>
-                      <!-- 左眼高光 -->
-                      <circle cx="16.2" cy="17.8" r="1" fill="white" opacity="0.7"/>
-                      <!-- 右眼 (大圆眼) -->
-                      <circle cx="29" cy="19" r="3.2" fill="currentColor"/>
-                      <!-- 右眼高光 -->
-                      <circle cx="30.2" cy="17.8" r="1" fill="white" opacity="0.7"/>
-
-                      <!-- 表情0: 开心 — 上扬弧线笑嘴 -->
-                      <path v-if="aiExpressionIndex === 0"
-                        d="M14 28 Q22 34 30 28"
-                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"
-                      />
-                      <!-- 表情1: 思考 — 歪嘴 + 腮红 -->
-                      <template v-else-if="aiExpressionIndex === 1">
-                        <path d="M15 29 Q20 27 28 30" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-                        <circle cx="10" cy="22" r="2.5" fill="currentColor" opacity="0.25"/>
-                        <circle cx="34" cy="22" r="2.5" fill="currentColor" opacity="0.25"/>
-                      </template>
-                      <!-- 表情2: 惊讶 — 小圆嘴 O -->
-                      <ellipse v-else-if="aiExpressionIndex === 2"
-                        cx="22" cy="29" rx="3.5" ry="2.5"
-                        stroke="currentColor" stroke-width="1.6" fill="none"
-                      />
-                      <!-- 表情3: 眯眼开心 — 眼睛变弧线 + 笑嘴 -->
-                      <template v-else-if="aiExpressionIndex === 3">
-                        <!-- 覆盖圆眼 -->
+                      <g class="animate-ai-float" style="transform-origin: 22px 22px;">
+                        <!-- 天线竖杆 -->
+                        <line x1="22" y1="2" x2="22" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <!-- 天线球 (可爱圆头) -->
+                        <circle cx="22" cy="2" r="2" fill="currentColor"/>
+                        <!-- 圆角头部 -->
                         <rect x="5" y="9" width="34" height="26" rx="7" stroke="currentColor" stroke-width="1.6" fill="none"/>
-                        <path d="M11.5 19 Q15 15.5 18.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-                        <path d="M25.5 19 Q29 15.5 32.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-                        <path d="M14 28 Q22 34 30 28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-                      </template>
-                      <!-- 表情4: 害羞 — 直线嘴 + 双腮红 -->
-                      <template v-else>
-                        <line x1="16" y1="29" x2="28" y2="29" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                        <ellipse cx="10" cy="22" rx="3" ry="2" fill="currentColor" opacity="0.3"/>
-                        <ellipse cx="34" cy="22" rx="3" ry="2" fill="currentColor" opacity="0.3"/>
-                      </template>
+                        
+                        <!-- 左耳 (半圆) -->
+                        <path d="M5 16 Q1 22 5 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                        <!-- 右耳 (半圆) -->
+                        <path d="M39 16 Q43 22 39 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
 
-                      <!-- 左耳 (半圆) -->
-                      <path d="M5 16 Q1 22 5 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-                      <!-- 右耳 (半圆) -->
-                      <path d="M39 16 Q43 22 39 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                        <!-- === 眉毛表情 (平滑透明度渐变) === -->
+                        <!-- 眉毛0: 开心/高挑 -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 0 ? 'opacity-100' : 'opacity-0'">
+                          <path d="M11 14 Q14.5 11.5 18 13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+                          <path d="M26 13.5 Q29.5 11.5 33 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+                        </g>
+                        <!-- 眉毛1: 疑惑/思考 (一高一低一平) -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 1 ? 'opacity-100' : 'opacity-0'">
+                          <line x1="11" y1="13" x2="17" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                          <line x1="27" y1="15" x2="33" y2="12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                        </g>
+                        <!-- 眉毛2: 震惊/高挑 -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 2 ? 'opacity-100' : 'opacity-0'">
+                          <path d="M11 11.5 Q14.5 9 18 11.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+                          <path d="M26 11.5 Q29.5 9 33 11.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+                        </g>
+                        <!-- 眉毛3: 眨眼开心 -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 3 ? 'opacity-100' : 'opacity-0'">
+                          <path d="M11 13 Q14.5 10.5 18 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+                          <path d="M26 12.5 Q29.5 10.5 33 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+                        </g>
+                        <!-- 眉毛4: 委屈/害羞 (八字眉) -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 4 ? 'opacity-100' : 'opacity-0'">
+                          <line x1="11" y1="13" x2="17" y2="15.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                          <line x1="27" y1="15.5" x2="33" y2="13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- === 眼睛表情 (平滑透明度渐变) === -->
+                        <!-- 眼睛类型A: 标准圆眼与高光 (表情0,1,2) - 表情2下圆眼直径放大 -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="(aiExpressionIndex === 0 || aiExpressionIndex === 1 || aiExpressionIndex === 2) ? 'opacity-100' : 'opacity-0'">
+                          <!-- 左眼 (大圆眼) -->
+                          <circle cx="15" cy="19" :r="aiExpressionIndex === 2 ? 4.2 : 3.2" fill="currentColor" class="transition-all duration-300 ease-in-out"/>
+                          <!-- Left Eye Highlight (Shifts slightly for Thinking (1)) -->
+                          <circle :cx="aiExpressionIndex === 1 ? 16.5 : 16.2" :cy="aiExpressionIndex === 1 ? 17.5 : 17.8" r="1" fill="white" opacity="0.8" class="transition-all duration-300 ease-in-out"/>
+                          
+                          <!-- 右眼 (大圆眼) -->
+                          <circle cx="29" cy="19" :r="aiExpressionIndex === 2 ? 4.2 : 3.2" fill="currentColor" class="transition-all duration-300 ease-in-out"/>
+                          <!-- Right Eye Highlight (Shifts slightly for Thinking (1)) -->
+                          <circle :cx="aiExpressionIndex === 1 ? 30.5 : 30.2" :cy="aiExpressionIndex === 1 ? 17.5 : 17.8" r="1" fill="white" opacity="0.8" class="transition-all duration-300 ease-in-out"/>
+                        </g>
+
+                        <!-- 眼睛类型B: 眨眼 (左眯眼，右圆眼) (表情3) -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 3 ? 'opacity-100' : 'opacity-0'">
+                          <!-- 左眯眼 -->
+                          <path d="M11.5 20 Q15 16.5 18.5 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                          <!-- 右圆眼 -->
+                          <circle cx="29" cy="19" r="3.2" fill="currentColor"/>
+                          <circle cx="30.2" cy="17.8" r="1" fill="white" opacity="0.8"/>
+                        </g>
+
+                        <!-- 眼睛类型C: 害羞闭眼 (直线眼) (表情4) -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="aiExpressionIndex === 4 ? 'opacity-100' : 'opacity-0'">
+                          <line x1="12" y1="19" x2="17" y2="19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                          <line x1="27" y1="19" x2="32" y2="19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- === 腮红 (表情1,4) === -->
+                        <g class="transition-opacity duration-300 ease-in-out" :class="(aiExpressionIndex === 1 || aiExpressionIndex === 4) ? 'opacity-30' : 'opacity-0'">
+                          <ellipse cx="10" cy="22" rx="3" ry="2" fill="currentColor"/>
+                          <ellipse cx="34" cy="22" rx="3" ry="2" fill="currentColor"/>
+                        </g>
+
+                        <!-- === 汗滴/冷汗 (表情4) === -->
+                        <path d="M35 11 C35 11 37 14 37 16 A 2 2 0 0 1 33 16 C 33 14 35 11 35 11 Z" 
+                          fill="currentColor" 
+                          class="transition-opacity duration-300 ease-in-out" 
+                          :class="aiExpressionIndex === 4 ? 'opacity-85' : 'opacity-0'"
+                        />
+
+                        <!-- === 嘴部表情 (平滑透明度渐变) === -->
+                        <!-- 嘴巴A: 开心笑嘴 (表情0,3) -->
+                        <path d="M14 28 Q22 34 30 28" 
+                          stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"
+                          class="transition-opacity duration-300 ease-in-out"
+                          :class="(aiExpressionIndex === 0 || aiExpressionIndex === 3) ? 'opacity-100' : 'opacity-0'"
+                        />
+                        <!-- 嘴巴B: 思考歪嘴 (表情1) -->
+                        <path d="M15 29 Q20 27 28 30" 
+                          stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"
+                          class="transition-opacity duration-300 ease-in-out"
+                          :class="aiExpressionIndex === 1 ? 'opacity-100' : 'opacity-0'"
+                        />
+                        <!-- 嘴巴C: 惊讶小圆嘴 O (表情2) -->
+                        <ellipse cx="22" cy="29" rx="3.5" ry="2.5" 
+                          stroke="currentColor" stroke-width="1.6" fill="none"
+                          class="transition-opacity duration-300 ease-in-out"
+                          :class="aiExpressionIndex === 2 ? 'opacity-100' : 'opacity-0'"
+                        />
+                        <!-- 嘴巴D: 害羞直线嘴 (表情4) -->
+                        <line x1="16" y1="29" x2="28" y2="29" 
+                          stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                          class="transition-opacity duration-300 ease-in-out"
+                          :class="aiExpressionIndex === 4 ? 'opacity-100' : 'opacity-0'"
+                        />
+                      </g>
                     </svg>
+
 
                     <!-- 3. 天气状况: 内联 SVG 随天气条件变化（与其他图标风格一致） -->
                     <svg v-else-if="isWidgetItem(item) && getWidgetIdFromUrl(item.url) === 'weather'"
@@ -1489,3 +1549,13 @@ onUnmounted(() => {
     </Transition>
   </div>
 </template>
+
+<style scoped>
+@keyframes aiFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+.animate-ai-float {
+  animation: aiFloat 4s ease-in-out infinite;
+}
+</style>
