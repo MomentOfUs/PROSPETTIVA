@@ -164,16 +164,38 @@ function applyAccentTheme(themeId: string) {
   root.style.setProperty('--color-line-accent', theme.color)
 }
 
+const filterQuery = ref('')
+const filterInputRef = ref<HTMLInputElement | null>(null)
+
+function handleGlobalKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+    e.preventDefault()
+    filterInputRef.value?.focus()
+  }
+}
+
 const activeGroupId = ref<string>('')
 const showCategorySidebar = ref(false)
 const currentPage = ref(0)
 const pageSize = computed(() => (config.value.gridRows ?? 5) * 12)
-const filteredItems = computed(() => !activeGroupId.value ? items.value : items.value.filter(i => i.groupId === activeGroupId.value))
+const filteredItems = computed(() => {
+  let list = !activeGroupId.value ? items.value : items.value.filter(i => i.groupId === activeGroupId.value)
+  if (filterQuery.value.trim()) {
+    const q = filterQuery.value.toLowerCase().trim()
+    list = list.filter(i => 
+      i.title.toLowerCase().includes(q) || 
+      (i.description && i.description.toLowerCase().includes(q)) ||
+      (i.url && i.url.toLowerCase().includes(q))
+    )
+  }
+  return list
+})
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / pageSize.value)))
 const paginatedItems = computed(() => filteredItems.value.slice(currentPage.value * pageSize.value, currentPage.value * pageSize.value + pageSize.value))
 
 watch(activeGroupId, () => { currentPage.value = 0 })
 watch(pageSize, () => { currentPage.value = 0 })
+watch(filterQuery, () => { currentPage.value = 0 })
 
 const dragItemId = ref<string | null>(null)
 const dragOverItemId = ref<string | null>(null)
@@ -538,6 +560,13 @@ function updateSystemTime() {
   currentSystemTime.value = new Date().toISOString().replace('T',' ').slice(0,19)
 }
 
+const activeWidgetsCount = computed(() => {
+  if (!config.value || !config.value.widgets) return 0
+  return Object.values(config.value.widgets).filter(Boolean).length
+})
+
+
+
 onMounted(async () => {
   loadFromStorage(); setupPersistence(); setupAuthListener()
   window.addEventListener('artisan-request-cloud-push', queueCloudPush)
@@ -567,6 +596,7 @@ onMounted(async () => {
   if (isLoggedIn()) await pullCloudData(true)
   isAppLoading.value = false; initCanvas()
   systemTimeInterval = setInterval(updateSystemTime, 1000)
+  window.addEventListener('keydown', handleGlobalKeydown)
 })
 
 onUnmounted(() => {
@@ -587,6 +617,7 @@ onUnmounted(() => {
   // 清除表情和天气定时器及监听
   if (expressionIntervalId) clearInterval(expressionIntervalId)
   window.removeEventListener('manga-weather-updated', updateWeatherIconFromCache)
+  window.removeEventListener('keydown', handleGlobalKeydown)
 })
 </script>
 
@@ -617,21 +648,47 @@ onUnmounted(() => {
     <header class="border-b border-line relative z-20 bg-surface">
       <!-- Top strip -->
       <div class="border-b border-line px-4 py-1 flex items-center gap-3">
-        <span class="text-[9px] text-accent tracking-widest">{{ $t('dashboard.home') }}</span>
-        <span class="text-[9px] text-neutral-500 tracking-widest hidden sm:inline">{{ $t('pid.mem.net') }}</span>
-        <div class="ml-auto flex items-center gap-4">
-          <span class="text-[9px] text-neutral-500 tracking-widest font-mono hidden md:inline">{{ currentSystemTime }}</span>
-          <div class="flex gap-1.5">
-            <span class="w-2 h-2 bg-neutral-600 inline-block"></span>
-            <span class="w-2 h-2 bg-accent inline-block"></span>
-            <span class="w-2 h-2 bg-white inline-block"></span>
+        <span class="text-[9px] text-accent tracking-widest font-mono select-none">
+          &gt; NEXUS://SYS  GROUPS: [{{ groups.length }}] | LINKS: [{{ items.length }}] | WIDGETS: [{{ activeWidgetsCount }}/15]
+        </span>
+        <div class="ml-auto flex items-center gap-3">
+          <!-- Theme Quick Selector -->
+          <div class="flex items-center gap-1 bg-base border border-line px-1.5 py-0.5 select-none">
+            <span class="text-[8px] text-neutral-500 font-mono tracking-widest mr-1 hidden sm:inline">THEME:</span>
+            <button 
+              v-for="color in ['orange', 'green', 'yellow', 'blue', 'purple']" 
+              :key="color"
+              @click="config.accentColor = color"
+              class="w-2 h-2 border border-neutral-700 cursor-pointer transition-transform hover:scale-110"
+              :style="{
+                backgroundColor: color === 'orange' ? '#ff5f1f' : color === 'green' ? '#00ff66' : color === 'yellow' ? '#ffff00' : color === 'blue' ? '#00e5ff' : '#bd00ff'
+              }"
+              :class="{
+                'border-neutral-200 scale-110': config.accentColor === color
+              }"
+              :title="color.toUpperCase()"
+            ></button>
+          </div>
+          <!-- Language Selector inside top strip -->
+          <button
+            @click="toggleLocale"
+            class="border border-line bg-base text-neutral-500 hover:text-accent px-1.5 py-0.5 text-[8px] font-bold tracking-widest cursor-pointer font-mono uppercase transition-colors"
+            title="LANG"
+          >
+            LANG: {{ locale === 'zh' ? 'ZH' : 'EN' }}
+          </button>
+          <!-- Colored Status Squares -->
+          <div class="flex gap-1">
+            <span class="w-1.5 h-1.5 bg-neutral-600 inline-block"></span>
+            <span class="w-1.5 h-1.5 bg-accent inline-block"></span>
+            <span class="w-1.5 h-1.5 bg-white inline-block"></span>
           </div>
         </div>
       </div>
       <!-- Main header row -->
       <div class="max-w-[90rem] mx-auto px-4 py-2 flex flex-row items-center gap-3">
         <!-- Logo & Brand Name -->
-        <div class="flex items-center gap-2 select-none">
+        <div class="flex items-center gap-2 select-none flex-shrink-0">
           <MangaLogo class="w-5 h-5 text-accent" />
           <span class="text-sm font-black tracking-widest text-neutral-200 uppercase hover:text-accent transition-colors">
             {{ config.logoText || 'NEXUS' }}
@@ -642,29 +699,86 @@ onUnmounted(() => {
           v-if="config.widgets.clock"
           :is="availableWidgets.find(w => w.id === 'clock')?.component"
           :compact="true"
+          class="flex-shrink-0"
         />
-        <div class="flex-1 min-w-0"></div>
+        <!-- Global Fuzzy Search Filter -->
+        <div class="flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-4 relative hidden sm:block select-none">
+          <div class="flex items-center border border-line bg-base px-2 py-1">
+            <span class="text-neutral-500 font-mono text-[9px] mr-1.5 select-none">&gt;</span>
+            <input 
+              ref="filterInputRef"
+              v-model="filterQuery"
+              type="text"
+              placeholder="快速过滤... (Ctrl+/)"
+              class="bg-transparent border-none outline-none text-neutral-200 font-mono text-[10px] w-full placeholder-neutral-600"
+            />
+            <button 
+              v-if="filterQuery" 
+              @click="filterQuery = ''"
+              class="text-[8px] text-neutral-600 hover:text-accent font-bold cursor-pointer font-mono select-none ml-1.5"
+            >
+              ESC
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0 sm:hidden"></div>
+        <!-- Widgets Quick Switch Toggle bar -->
+        <div class="hidden lg:flex items-center gap-1 border border-line bg-base px-2 py-0.5 select-none mr-1">
+          <span class="text-[8px] text-neutral-500 font-mono tracking-widest mr-1">WIDGETS:</span>
+          <button 
+            @click="config.widgets.clock = !config.widgets.clock"
+            class="p-0.5 border border-transparent hover:border-line cursor-pointer flex items-center justify-center transition-colors"
+            :class="config.widgets.clock ? 'text-accent' : 'text-neutral-600'"
+            title="Clock / 时钟"
+          >
+            <ClockIcon class="w-3.5 h-3.5" />
+          </button>
+          <button 
+            @click="config.widgets.weather = !config.widgets.weather"
+            class="p-0.5 border border-transparent hover:border-line cursor-pointer flex items-center justify-center transition-colors"
+            :class="config.widgets.weather ? 'text-accent' : 'text-neutral-600'"
+            title="Weather / 天气"
+          >
+            <CloudRainIcon class="w-3.5 h-3.5" />
+          </button>
+          <button 
+            @click="config.widgets.todo = !config.widgets.todo"
+            class="p-0.5 border border-transparent hover:border-line cursor-pointer flex items-center justify-center transition-colors"
+            :class="config.widgets.todo ? 'text-accent' : 'text-neutral-600'"
+            title="Todo / 待办"
+          >
+            <CheckSquareIcon class="w-3.5 h-3.5" />
+          </button>
+          <button 
+            @click="config.widgets.notes = !config.widgets.notes"
+            class="p-0.5 border border-transparent hover:border-line cursor-pointer flex items-center justify-center transition-colors"
+            :class="config.widgets.notes ? 'text-accent' : 'text-neutral-600'"
+            title="Notes / 便签"
+          >
+            <FileTextIcon class="w-3.5 h-3.5" />
+          </button>
+          <button 
+            @click="config.widgets.aichat = !config.widgets.aichat"
+            class="p-0.5 border border-transparent hover:border-line cursor-pointer flex items-center justify-center transition-colors"
+            :class="config.widgets.aichat ? 'text-accent' : 'text-neutral-600'"
+            title="AI Chat / 智脑"
+          >
+            <BotIcon class="w-3.5 h-3.5" />
+          </button>
+        </div>
         <!-- Cloud Sync Button -->
         <button
           @click="showAuthModal = true"
-          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 px-3 py-1.5 text-[10px] font-bold tracking-widest cursor-pointer transition-none flex items-center gap-1.5 glitch-on-click"
+          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 px-3 py-1.5 text-[10px] font-bold tracking-widest cursor-pointer transition-none flex items-center gap-1.5 glitch-on-click flex-shrink-0"
           :title="isUserLoggedIn ? $t('sync.connected') + ' — ' + loggedInUser : $t('sync.offline')"
         >
           <span class="w-1.5 h-1.5 inline-block" :class="isUserLoggedIn ? 'bg-white' : 'bg-neutral-700'"></span>
           <span>{{ isUserLoggedIn ? loggedInUser.toUpperCase() : $t('sync') }}</span>
         </button>
-        <!-- Language Toggle -->
-        <button
-          @click="toggleLocale"
-          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 px-2 py-1 text-[10px] font-bold tracking-widest cursor-pointer transition-none uppercase"
-          title="LANG"
-        >
-          {{ locale === 'zh' ? 'EN' : '中' }}
-        </button>
         <!-- Settings Button -->
         <button
           @click="showSettings = true"
-          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 w-8 h-8 flex items-center justify-center cursor-pointer transition-none glitch-on-click"
+          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 w-8 h-8 flex items-center justify-center cursor-pointer transition-none glitch-on-click flex-shrink-0"
           :title="$t('settings')"
         >
           <SettingsIcon class="w-4 h-4" />
