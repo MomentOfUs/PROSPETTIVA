@@ -466,9 +466,14 @@ const IDLE_TIME_THRESHOLD = 30000 // 30秒无操作触发
 
 function resetIdleTimer() {
   if (idleTimeoutId) clearTimeout(idleTimeoutId)
-  if (!showIdleMotto.value) {
-    idleTimeoutId = setTimeout(triggerIdleMotto, IDLE_TIME_THRESHOLD)
+  if (showIdleMotto.value) {
+    showIdleMotto.value = false
+    if (cycleTimeoutId) {
+      clearTimeout(cycleTimeoutId)
+      cycleTimeoutId = null
+    }
   }
+  idleTimeoutId = setTimeout(triggerIdleMotto, IDLE_TIME_THRESHOLD)
 }
 
 async function triggerIdleMotto() {
