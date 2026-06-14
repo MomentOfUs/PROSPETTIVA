@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { triggerCloudPush, isLoggedIn, getToken } from '../../utils/api'
 import { t } from '../../i18n'
 
@@ -102,15 +102,29 @@ watch(sessions, (newVal) => {
   triggerCloudPush()
 }, { deep: true })
 
+function handleTriggerAiChat(e: any) {
+  const prompt = e.detail?.prompt || ''
+  if (prompt.trim()) {
+    inputMsg.value = prompt
+    sendMessage()
+  }
+}
+
 onMounted(() => {
   loadConfig()
   loadSessions()
   
   // Listen for config updates
   window.addEventListener('manga-config-updated', loadConfig)
+  window.addEventListener('manga-trigger-aichat', handleTriggerAiChat)
   window.addEventListener('artisan-auth-state-changed', () => {
     isUserLoggedIn.value = isLoggedIn()
   })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('manga-config-updated', loadConfig)
+  window.removeEventListener('manga-trigger-aichat', handleTriggerAiChat)
 })
 
 function scrollToBottom() {

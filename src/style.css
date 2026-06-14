@@ -199,6 +199,15 @@ a:focus-visible {
   transform: translateX(-100%);
 }
 
+.slide-right-drawer-enter-active,
+.slide-right-drawer-leave-active {
+  transition: transform 0.1s steps(4);
+}
+.slide-right-drawer-enter-from,
+.slide-right-drawer-leave-to {
+  transform: translateX(100%);
+}
+
 .slide-fade-enter-active,
 .slide-fade-leave-active {
   transition: all 0.1s steps(3);

@@ -48,10 +48,12 @@ function loadTodos() {
 onMounted(() => {
   loadTodos()
   window.addEventListener('artisan-cloud-data-pulled', loadTodos)
+  window.addEventListener('manga-todo-updated', loadTodos)
 })
 
 onUnmounted(() => {
   window.removeEventListener('artisan-cloud-data-pulled', loadTodos)
+  window.removeEventListener('manga-todo-updated', loadTodos)
 })
 
 watch(todos, (newVal) => {

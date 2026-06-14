@@ -87,6 +87,8 @@ export const zh = {
   'background': '背景色',
   'normal': '标准',
   'wide': '宽幅 (2列)',
+  'tall': '长幅 (2行)',
+  'large': '大格 (2x2)',
   'auto.favicon': '自动 (网站图标)',
   'first.letter': '首字母',
   'widget.component': '组件 — 不可更改 URL',
@@ -105,6 +107,7 @@ export const zh = {
   'widget.snippet': '代码片段',
   'widget.devtools': '开发工具',
   'widget.countdown': '倒计时',
+  'widget.radio': '复古电台',
 
   // ── Widget: Clock ──
   'clock.title': '[ 时钟 & 番茄钟 ]',

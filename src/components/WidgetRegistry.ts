@@ -127,5 +127,14 @@ export const availableWidgets: WidgetDef[] = [
     defaultEnabled: true,
     position: 'dashboard',
     component: defineAsyncComponent(() => import('./widgets/MangaCountdown.vue'))
+  },
+  {
+    id: 'radio',
+    name: 'CHIP_TUNE',
+    description: '8-Bit retro soundscapes and white noise synthesizer',
+    icon: 'Radio',
+    defaultEnabled: true,
+    position: 'dashboard',
+    component: defineAsyncComponent(() => import('./widgets/MangaRadio.vue'))
   }
 ]

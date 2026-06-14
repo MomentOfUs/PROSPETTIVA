@@ -87,6 +87,8 @@ export const en = {
   'background': 'BACKGROUND',
   'normal': 'NORMAL',
   'wide': 'WIDE (2 COL)',
+  'tall': 'TALL (2 ROW)',
+  'large': 'LARGE (2x2)',
   'auto.favicon': 'AUTO (FAVICON)',
   'first.letter': 'FIRST LETTER',
   'widget.component': 'WIDGET COMPONENT — URL CANNOT BE CHANGED',
@@ -105,6 +107,7 @@ export const en = {
   'widget.snippet': 'SNIPPET',
   'widget.devtools': 'DEVTOOLS',
   'widget.countdown': 'TIMER',
+  'widget.radio': 'CHIP_TUNE',
 
   // ── Widget: Clock ──
   'clock.title': '[ CLOCK & POMODORO ]',

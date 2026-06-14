@@ -19,7 +19,7 @@ export interface NavItem {
   description: string
   icon: string
   color: string
-  size?: 'normal' | 'wide'
+  size?: 'normal' | 'wide' | 'tall' | 'large'
 }
 
 export interface Config {

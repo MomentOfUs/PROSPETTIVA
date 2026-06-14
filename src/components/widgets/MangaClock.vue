@@ -106,9 +106,23 @@ function playDing() {
   } catch {}
 }
 
+function handleTriggerPomo(e: any) {
+  const mins = e.detail?.minutes || 25
+  setPomodoroDuration(mins)
+  startPomodoro()
+}
+
 let timer: any
-onMounted(() => { updateTime(); timer = setInterval(updateTime, 1000) })
-onUnmounted(() => { clearInterval(timer); clearInterval(pInterval) })
+onMounted(() => { 
+  updateTime(); 
+  timer = setInterval(updateTime, 1000) 
+  window.addEventListener('manga-trigger-pomo', handleTriggerPomo)
+})
+onUnmounted(() => { 
+  clearInterval(timer); 
+  clearInterval(pInterval) 
+  window.removeEventListener('manga-trigger-pomo', handleTriggerPomo)
+})
 
 // ── 悬浮弹窗与日历交互逻辑 ──
 const showPopup = ref(false)

@@ -172,6 +172,10 @@ function handleGlobalKeydown(e: KeyboardEvent) {
     e.preventDefault()
     filterInputRef.value?.focus()
   }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+    e.preventDefault()
+    showStickyDrawer.value = !showStickyDrawer.value
+  }
 }
 
 const activeGroupId = ref<string>('')
@@ -369,7 +373,7 @@ const showItemModal = ref(false)
 const editingItem = ref<any>(null)
 const itemForm = ref({
   id: '', groupId: '', title: '', url: '', description: '',
-  icon: 'Link', color: '#0a0a0a', size: 'normal' as 'normal' | 'wide'
+  icon: 'Link', color: '#0a0a0a', size: 'normal' as 'normal' | 'wide' | 'tall' | 'large'
 })
 const importFileRef = ref<HTMLInputElement | null>(null)
 
@@ -569,6 +573,7 @@ const activeWidgetsCount = computed(() => {
 
 onMounted(async () => {
   loadFromStorage(); setupPersistence(); setupAuthListener()
+  stickyJot.value = localStorage.getItem('manga_sticky_jot') || ''
   window.addEventListener('artisan-request-cloud-push', queueCloudPush)
   window.addEventListener('manga-widgets-layout-updated', loadFromStorage)
   
@@ -616,9 +621,153 @@ onUnmounted(() => {
 
   // 清除表情和天气定时器及监听
   if (expressionIntervalId) clearInterval(expressionIntervalId)
+  if (feedbackTimeout) clearTimeout(feedbackTimeout)
   window.removeEventListener('manga-weather-updated', updateWeatherIconFromCache)
   window.removeEventListener('keydown', handleGlobalKeydown)
 })
+
+// ── 右侧侧边滑出抽屉逻辑 ──
+const showStickyDrawer = ref(false)
+const stickyJot = ref('')
+const drawerSnippets = ref<any[]>([])
+const copiedSnippetId = ref<string | null>(null)
+
+function loadDrawerSnippets() {
+  const stored = localStorage.getItem('manga_widget_snippets')
+  if (stored) {
+    try {
+      drawerSnippets.value = JSON.parse(stored)
+    } catch {
+      drawerSnippets.value = []
+    }
+  } else {
+    drawerSnippets.value = [
+      { id: 's1', title: 'Git Commit All', content: 'git add . && git commit -m "update" && git push', category: 'DEV', color: '#0A0A0A' },
+      { id: 's2', title: 'Weekly Report', content: '[PROGRESS]\n1. \n2. \n[NEXT_WEEK]\n1. \n2. \n[NEEDS]\nNone', category: 'WORK', color: '#111111' },
+      { id: 's3', title: 'Get Local IP', content: 'curl ipinfo.io', category: 'DEV', color: '#1A1A1A' },
+      { id: 's4', title: 'Daily Check-in', content: 'Check-in complete. All systems nominal.', category: 'GENERAL', color: '#1F1F1F' }
+    ]
+  }
+}
+
+function copySnippet(content: string, id: string) {
+  navigator.clipboard.writeText(content)
+  copiedSnippetId.value = id
+  setTimeout(() => {
+    if (copiedSnippetId.value === id) {
+      copiedSnippetId.value = null
+    }
+  }, 1500)
+}
+
+watch(showStickyDrawer, (newVal) => {
+  if (newVal) {
+    loadDrawerSnippets()
+  }
+})
+
+watch(stickyJot, (newVal) => {
+  localStorage.setItem('manga_sticky_jot', newVal)
+})
+
+// ── 命令行控制中心逻辑 ──
+const commandFeedback = ref('')
+const commandFeedbackType = ref<'success' | 'error'>('success')
+let feedbackTimeout: any = null
+
+function showFeedback(text: string, type: 'success' | 'error' = 'success') {
+  commandFeedback.value = text
+  commandFeedbackType.value = type
+  if (feedbackTimeout) clearTimeout(feedbackTimeout)
+  feedbackTimeout = setTimeout(() => {
+    commandFeedback.value = ''
+  }, 3000)
+}
+
+function handleCommandSubmit() {
+  const query = filterQuery.value.trim()
+  if (!query.startsWith('/')) {
+    return // Not a command, do normal filter
+  }
+
+  // Parse command
+  const spaceIndex = query.indexOf(' ')
+  const cmd = spaceIndex === -1 ? query : query.slice(0, spaceIndex)
+  const arg = spaceIndex === -1 ? '' : query.slice(spaceIndex + 1).trim()
+
+  const commandName = cmd.slice(1).toLowerCase() // remove leading slash
+
+  if (commandName === 'todo') {
+    if (!arg) {
+      showFeedback('ERROR: TODO CONTENT REQUIRED', 'error')
+      return
+    }
+    // Add todo
+    let currentTodos: any[] = []
+    const stored = localStorage.getItem('manga_widget_todos')
+    if (stored) {
+      try {
+        currentTodos = JSON.parse(stored)
+      } catch {
+        currentTodos = []
+      }
+    }
+    const newTodo = {
+      id: 't' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      text: arg,
+      completed: false,
+      category: 'inbox'
+    }
+    currentTodos.push(newTodo)
+    localStorage.setItem('manga_widget_todos', JSON.stringify(currentTodos))
+    window.dispatchEvent(new CustomEvent('manga-todo-updated'))
+    
+    // Auto-enable todo widget if disabled so they see it
+    config.value.widgets.todo = true
+    
+    showFeedback(`[SUCCESS]: TODO_ADDED: "${arg.slice(0, 15)}${arg.length > 15 ? '...' : ''}"`)
+    filterQuery.value = ''
+  } 
+  else if (commandName === 'pomo') {
+    const mins = parseInt(arg, 10)
+    const finalMins = isNaN(mins) ? 25 : mins
+    config.value.widgets.clock = true // ensure clock is visible
+    window.dispatchEvent(new CustomEvent('manga-trigger-pomo', { detail: { minutes: finalMins } }))
+    showFeedback(`[SUCCESS]: POMO_STARTED: ${finalMins} MINS`)
+    filterQuery.value = ''
+  } 
+  else if (commandName === 'chat') {
+    // Open AI chat modal
+    config.value.widgets.aichat = true // ensure AI chat is enabled
+    const widget = availableWidgets.find(w => w.id === 'aichat')
+    if (widget) {
+      openedWidget.value = widget
+      showWidgetModal.value = true
+    }
+    if (arg) {
+      // Small delay to let modal mount and listen
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('manga-trigger-aichat', { detail: { prompt: arg } }))
+      }, 300)
+    }
+    showFeedback(`[SUCCESS]: AI_CHAT_TRIGGERED`)
+    filterQuery.value = ''
+  } 
+  else if (commandName === 'theme') {
+    const themeName = arg.toLowerCase().trim()
+    const validThemes = ['orange', 'green', 'yellow', 'blue', 'purple']
+    if (validThemes.includes(themeName)) {
+      config.value.accentColor = themeName
+      showFeedback(`[SUCCESS]: ACCENT_THEME_UPDATED: ${themeName.toUpperCase()}`)
+      filterQuery.value = ''
+    } else {
+      showFeedback(`ERROR: INVALID_THEME. USE: ORANGE | GREEN | YELLOW | BLUE | PURPLE`, 'error')
+    }
+  } 
+  else {
+    showFeedback(`ERROR: UNKNOWN_COMMAND: /${commandName}`, 'error')
+  }
+}
 </script>
 
 <template>
@@ -710,6 +859,7 @@ onUnmounted(() => {
               v-model="filterQuery"
               type="text"
               placeholder="快速过滤... (Ctrl+/)"
+              @keydown.enter="handleCommandSubmit"
               class="bg-transparent border-none outline-none text-neutral-200 font-mono text-[10px] w-full placeholder-neutral-600"
             />
             <button 
@@ -720,6 +870,16 @@ onUnmounted(() => {
               ESC
             </button>
           </div>
+          <!-- Command Feedback Toast -->
+          <Transition name="fade">
+            <div 
+              v-if="commandFeedback" 
+              class="absolute top-full left-0 right-0 mt-1 border border-accent bg-base px-2 py-1 text-[9px] font-mono select-none z-[9999]"
+              :class="commandFeedbackType === 'success' ? 'text-accent shadow-[2px_2px_0px_var(--color-accent)]' : 'text-rose-500 shadow-[2px_2px_0px_#f43f5e]'"
+            >
+              {{ commandFeedback }}
+            </div>
+          </Transition>
         </div>
         <div class="flex-1 min-w-0 sm:hidden"></div>
         <!-- Widgets Quick Switch Toggle bar -->
@@ -774,6 +934,15 @@ onUnmounted(() => {
         >
           <span class="w-1.5 h-1.5 inline-block" :class="isUserLoggedIn ? 'bg-white' : 'bg-neutral-700'"></span>
           <span>{{ isUserLoggedIn ? loggedInUser.toUpperCase() : $t('sync') }}</span>
+        </button>
+        <!-- Drawer Button -->
+        <button
+          @click="showStickyDrawer = !showStickyDrawer"
+          class="border border-line bg-btn-base text-neutral-400 hover:bg-neutral-300 hover:text-base hover:border-neutral-300 w-8 h-8 flex items-center justify-center cursor-pointer transition-none glitch-on-click flex-shrink-0"
+          :class="{ 'border-accent text-accent bg-accent/5': showStickyDrawer }"
+          :title="locale === 'zh' ? '便签与剪贴抽屉 (Ctrl+I)' : 'Notes & Snippets Drawer (Ctrl+I)'"
+        >
+          <FileTextIcon class="w-4 h-4" />
         </button>
         <!-- Settings Button -->
         <button
@@ -894,6 +1063,75 @@ onUnmounted(() => {
         </aside>
       </Transition>
 
+      <!-- Right Side Helper Drawer Backdrop -->
+      <Transition name="fade">
+        <div v-if="showStickyDrawer" @click="showStickyDrawer = false" class="fixed inset-0 bg-black/70 z-[85]"></div>
+      </Transition>
+
+      <!-- Right Side Helper Drawer -->
+      <Transition name="slide-right-drawer">
+        <aside
+          v-if="showStickyDrawer"
+          class="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-surface border-l border-accent p-5 z-[90] flex flex-col gap-5 select-none"
+        >
+          <!-- Title & Close button -->
+          <div class="flex items-center justify-between border-b border-line pb-3">
+            <span class="text-xs uppercase tracking-widest text-accent font-bold">
+              // HELPER_DRAWER
+            </span>
+            <button @click="showStickyDrawer = false" class="text-sm text-neutral-400 hover:text-white transition-none cursor-pointer bg-transparent border-0 outline-none font-bold">✕</button>
+          </div>
+
+          <!-- Jotting Pad -->
+          <div class="flex flex-col gap-2 flex-1 min-h-0">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-neutral-500 font-mono tracking-widest uppercase flex items-center gap-1.5">
+                <FileTextIcon class="w-3.5 h-3.5" />
+                {{ locale === 'zh' ? '灵感速记' : 'JOTTINGS' }}
+              </span>
+              <span class="text-[8px] text-neutral-600 font-mono">AUTOSAVE</span>
+            </div>
+            <textarea
+              v-model="stickyJot"
+              placeholder="Start typing your quick thoughts here... (Syncs instantly)"
+              class="flex-1 w-full bg-base border border-line p-3 text-neutral-300 font-mono text-[11px] outline-none focus:border-accent resize-none placeholder-neutral-700"
+            ></textarea>
+          </div>
+
+          <!-- Code Snippets -->
+          <div class="flex flex-col gap-2 flex-1 min-h-0">
+            <div class="flex items-center justify-between border-t border-line pt-3">
+              <span class="text-[10px] text-neutral-500 font-mono tracking-widest uppercase flex items-center gap-1.5">
+                <FileCodeIcon class="w-3.5 h-3.5" />
+                {{ locale === 'zh' ? '代码剪贴' : 'SNIPPETS' }}
+              </span>
+            </div>
+            <div class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
+              <div v-if="drawerSnippets.length === 0" class="text-center py-6 border border-dashed border-line text-neutral-600 text-[10px] uppercase font-mono">
+                No snippets found
+              </div>
+              <div
+                v-for="snip in drawerSnippets"
+                :key="snip.id"
+                class="border border-line bg-base p-2.5 flex flex-col gap-1.5"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-300 tracking-wider truncate mr-2">{{ snip.title }}</span>
+                  <span v-if="snip.category" class="text-[8px] border border-neutral-800 text-neutral-600 px-1 font-mono uppercase">{{ snip.category }}</span>
+                </div>
+                <pre class="bg-surface border border-neutral-900 p-1.5 text-[9px] font-mono text-neutral-400 overflow-x-auto break-all select-text leading-relaxed whitespace-pre-wrap max-h-20">{{ snip.content }}</pre>
+                <button
+                  @click="copySnippet(snip.content, snip.id)"
+                  class="w-full text-center border border-line hover:border-accent hover:text-accent bg-surface hover:bg-accent/5 text-[9px] font-mono py-1 cursor-pointer transition-colors"
+                >
+                  {{ copiedSnippetId === snip.id ? '[ COPIED_SUCCESS ]' : '[ COPY_TO_CLIPBOARD ]' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </Transition>
+
       <!-- Main Content -->
       <div v-if="items.length > 0" class="flex flex-col gap-4 w-full">
         <!-- Top bar -->
@@ -961,7 +1199,7 @@ onUnmounted(() => {
           <div v-else class="flex flex-col gap-4 min-h-[220px]">
             <div
               class="grid bg-neutral-800 gap-px p-4"
-              style="grid-template-columns: repeat(auto-fill, minmax(96px, 1fr))"
+              style="grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); grid-auto-rows: minmax(110px, auto);"
             >
               <a v-for="item in paginatedItems" :key="item.id"
                 :href="isWidgetItem(item) ? 'javascript:void(0)' : item.url"
@@ -974,7 +1212,9 @@ onUnmounted(() => {
                 @dragend="handleDragEnd"
                 class="flex flex-col items-center gap-2 group/card relative select-none bg-surface px-1.5 py-2.5 w-full h-full justify-between"
                 :class="[
-                  item.size === 'wide' ? 'col-span-2' : '',
+                  item.size === 'wide' ? 'col-span-2 row-span-1' : '',
+                  item.size === 'tall' ? 'col-span-1 row-span-2' : '',
+                  item.size === 'large' ? 'col-span-2 row-span-2' : '',
                   dragOverItemId === item.id ? 'opacity-50' : ''
                 ]"
                 :title="item.description || getItemTitle(item)"
@@ -992,7 +1232,7 @@ onUnmounted(() => {
                 <div
                   class="icon-tile flex items-center justify-center transition-none group-hover/card:border-accent active:scale-95 cursor-grab active:cursor-grabbing overflow-hidden border border-line shrink-0"
                   :class="[
-                    item.size === 'wide' ? 'w-full h-16 sm:h-20' : 'w-16 h-16 sm:w-20 sm:h-20'
+                    (item.size === 'wide' || item.size === 'large') ? 'w-full h-16 sm:h-20' : 'w-16 h-16 sm:w-20 sm:h-20'
                   ]"
                   :style="{ backgroundColor: item.color }"
                 >
@@ -1323,6 +1563,15 @@ onUnmounted(() => {
                     </div>
                   </div>
                 </Transition>
+
+                <!-- Resize Handle -->
+                <div 
+                  class="absolute bottom-0.5 right-0.5 cursor-se-resize text-neutral-600 hover:text-accent select-none z-[60] text-[10px] leading-none p-0.5 transition-colors font-mono font-bold"
+                  @mousedown.prevent.stop="startResizeItem(item, $event)"
+                  title="RESIZE"
+                >
+                  ◢
+                </div>
               </a>
             </div>
 
@@ -1603,6 +1852,8 @@ onUnmounted(() => {
             class="border border-line p-2 bg-base text-neutral-300 outline-none focus:border-accent transition-none">
             <option value="normal">{{ $t('normal') }}</option>
             <option value="wide">{{ $t('wide') }}</option>
+            <option value="tall">{{ $t('tall') }}</option>
+            <option value="large">{{ $t('large') }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-1.5">
